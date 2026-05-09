@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sinelog
+  namespace: sinelog
+  labels:
+    app: sinelog
+spec:
+  type: ClusterIP
+  selector:
+    app: sinelog
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+      protocol: TCP

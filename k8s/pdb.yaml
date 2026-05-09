@@ -1,0 +1,12 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: sinelog
+  namespace: sinelog
+  labels:
+    app: sinelog
+spec:
+  minAvailable: 2          # At least 2 pods must stay up during node drains / upgrades
+  selector:
+    matchLabels:
+      app: sinelog

@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sinelog
+  namespace: sinelog
+  labels:
+    app: sinelog
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: sinelog
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0          # Zero-downtime deploys
+  template:
+    metadata:
+      labels:
+        app: sinelog
+    spec:
+      # ── Security ───────────────────────────────────────────────
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+
+      # ── Graceful shutdown ──────────────────────────────────────
+      terminationGracePeriodSeconds: 30
+
+      containers:
+        - name: sinelog
+          image: sinelog:latest
+          imagePullPolicy: IfNotPresent   # Use Always when pulling from a remote registry
+
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+
+          # ── Nginx config from ConfigMap ────────────────────────
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
+              readOnly: true
+
+          # ── Resource limits ────────────────────────────────────
+          resources:
+            requests:
+              cpu:    "50m"
+              memory: "64Mi"
+            limits:
+              cpu:    "200m"
+              memory: "128Mi"
+
+          # ── Health probes ──────────────────────────────────────
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            failureThreshold: 3
+
+          # ── Security context ───────────────────────────────────
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false   # nginx needs to write tmp files
+            capabilities:
+              drop: ["ALL"]
+
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: sinelog-nginx-config
