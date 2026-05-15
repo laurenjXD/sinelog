@@ -32,23 +32,6 @@ SineLog is a personal film diary and discovery app built with vanilla JavaScript
 - `styles.css` contains the design system, responsive styles, modal styles, and reusable UI classes.
 - `supabase-schema.sql` contains the full schema for a new Supabase project.
 
-## Setup
-
-1. Create a Supabase project.
-2. Run `supabase-schema.sql` in the Supabase SQL editor for a fresh database.
-3. Create a TMDB API key.
-4. Add your keys in `app.js`:
-
-```js
-SL.CONFIG = {
-  TMDB_KEY: 'your_tmdb_v3_api_key',
-  SUPABASE_URL: 'https://your-project.supabase.co',
-  SUPABASE_ANON: 'your_supabase_anon_key',
-};
-```
-
-5. Open `index.html` in a browser, or serve the folder with a static web server.
-
 ## Demo Checklist
 
 Use this checklist before presenting:
