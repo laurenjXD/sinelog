@@ -1,6 +1,9 @@
 -- SineLog security-invoker view migration
 -- Run this in Supabase SQL Editor for existing projects flagged by the Security Advisor.
 
+ALTER TABLE public.film_logs
+  ADD COLUMN IF NOT EXISTS is_rewatch BOOLEAN DEFAULT FALSE;
+
 CREATE OR REPLACE VIEW public.activity_feed
 WITH (security_invoker = true) AS
 SELECT
@@ -15,7 +18,7 @@ SELECT
     fl.rating,
     fl.review,
     fl.liked,
-    fl.keyframes,
+    fl.is_rewatch,
     fl.watched_on,
     fl.created_at,
     (SELECT COUNT(*) FROM public.review_likes rl WHERE rl.log_id = fl.id) AS like_count

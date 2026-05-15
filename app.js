@@ -40,6 +40,29 @@ SL.fmt = {
   rating:  (n) => n ? `★ ${Number(n).toFixed(1)}` : '',
 };
 
+SL.ratingLabel = (n) => {
+  const rating = Number(n || 0);
+  if (!rating) return '';
+  if (rating <= 1) return 'Hated it';
+  if (rating <= 2) return "Didn't like it";
+  if (rating <= 3) return 'It was OK';
+  if (rating <= 4) return 'Liked it';
+  return 'Loved it';
+};
+
+SL.ratingText = (n) => {
+  const rating = Number(n || 0);
+  return rating ? `${rating.toFixed(1)} / 5` : '';
+};
+
+SL.ratingStars = (n) => {
+  const rating = Number(n || 0);
+  if (!rating) return '';
+  const full = Math.floor(rating);
+  const half = rating % 1 >= 0.5;
+  return `${'★'.repeat(full)}${half ? '½' : ''}${'☆'.repeat(5 - full - (half ? 1 : 0))}`;
+};
+
 // ── Toast ─────────────────────────────────────────────────────────
 SL.toast = (() => {
   const el = document.getElementById('toast');

@@ -51,7 +51,7 @@ SL.Router.register('search-page', async (container, params) => {
     switch (activeCat) {
       case 'top_rated':   return SL.TMDB.topRated(pg);
       case 'now_playing': return SL.TMDB.nowPlaying(pg);
-      case 'upcoming':    return SL.TMDB.upcoming(pg);
+      case 'upcoming':    return SL.TMDB.upcomingFuture(pg);
       case 'popular':     return SL.TMDB.popular(pg);
       default:            return SL.TMDB.trending('week', pg);
     }
@@ -64,7 +64,7 @@ SL.Router.register('search-page', async (container, params) => {
           <img src="${SL.img.poster(m.poster_path,'w342')}" loading="lazy"
             alt="${SL.esc(m.title || m.name || '')} poster"
             class="movie-card-poster" />
-          ${m.vote_average ? `<div class="movie-card-rating">★ ${Number(m.vote_average).toFixed(1)}</div>` : ''}
+          ${m.vote_average ? `<div class="movie-card-rating">★ ${Number(m.vote_average).toFixed(1)}</div>` : `<div class="movie-card-rating muted">No rating</div>`}
         </div>
         <p class="movie-card-title">${SL.esc(m.title || m.name || '')}</p>
         <p class="movie-card-year">${SL.fmt.year(m.release_date || m.first_air_date || '')}</p>
@@ -167,8 +167,9 @@ SL.Router.register('search-page', async (container, params) => {
     <div class="browse-page" style="max-width:1200px;margin:0 auto;padding:88px 20px 80px;overflow:visible">
 
       <!-- Header -->
-      <div style="margin-bottom:28px">
-        <h1 style="font-family:'DM Serif Display',serif;font-size:1.7rem;font-style:italic;color:var(--text);margin-bottom:4px" id="browse-title">
+      <div class="page-heading" style="margin-bottom:28px">
+        <p class="page-kicker">Browse</p>
+        <h1 class="page-title" id="browse-title">
           ${getTitle()}
         </h1>
         <p style="font-size:13px;color:var(--mist)">Discover your next favourite film</p>
@@ -192,6 +193,7 @@ SL.Router.register('search-page', async (container, params) => {
       ${!query && !personId ? `
       <section class="browse-filter-panel" style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 22px;margin-bottom:42px;overflow:visible">
         <!-- Category filters -->
+        <p class="filter-label">Category</p>
         <div class="browse-category-row" style="display:flex;gap:10px;overflow-x:auto;padding-bottom:18px;margin-bottom:14px;scrollbar-width:none">
           ${categories.map(c => `
             <button data-cat="${c.id}" onclick="setBrowseCat('${c.id}')" style="${catStyle(c.id)}">
@@ -201,6 +203,7 @@ SL.Router.register('search-page', async (container, params) => {
         </div>
 
         <!-- Genre filters -->
+        <p class="filter-label">Genre</p>
         <div class="browse-genre-row" style="display:flex;gap:10px;row-gap:10px;flex-wrap:wrap">
           ${genres.map(g => `
             <button data-genre="${g.id}" onclick="setBrowseGenre(${g.id},'${g.name}')" style="${genreStyle(g.id)}">
@@ -229,6 +232,9 @@ SL.Router.register('search-page', async (container, params) => {
         <span style="margin-left:10px">Loading more films...</span>
       </div>
       <div id="search-sentinel" style="height:1px"></div>
+      <button id="browse-scroll-top" class="scroll-top-btn" type="button" aria-label="Scroll to top">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></svg>
+      </button>
     </div>
   `;
 
@@ -320,4 +326,13 @@ SL.Router.register('search-page', async (container, params) => {
     if (entries[0].isIntersecting) loadMore();
   }, { threshold: 0.1 });
   if (sentinel) observer.observe(sentinel);
+
+  const scrollTopBtn = document.getElementById('browse-scroll-top');
+  const toggleScrollTop = () => {
+    if (SL.Router.current() !== 'search-page') return;
+    scrollTopBtn?.classList.toggle('visible', window.scrollY > 420);
+  };
+  scrollTopBtn?.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+  window.addEventListener('scroll', toggleScrollTop, { passive: true });
+  toggleScrollTop();
 });

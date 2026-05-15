@@ -20,21 +20,7 @@ SL.Router.register('profile', async (container, params) => {
   let activeTab = 'films';
   let profile, isFollowing;
 
-  function logKeyframes(log) {
-    return Array.isArray(log.keyframes) ? log.keyframes.filter(Boolean).slice(0, 4) : [];
-  }
-
   function filmVisual(log, posterSize = 'w342') {
-    const keyframes = logKeyframes(log);
-    if (keyframes.length >= 2) {
-      return `
-        <div class="film-table-grid">
-          ${Array.from({ length: 4 }, (_, i) => keyframes[i]
-            ? `<img src="${SL.img.backdrop(keyframes[i], 'w300')}" alt="" />`
-            : `<div></div>`).join('')}
-        </div>
-      `;
-    }
     return `<img src="${SL.img.poster(log.poster_path, posterSize)}" loading="lazy" alt="${SL.esc(log.movie_title || 'Film poster')}"
       class="movie-card-poster" />`;
   }
@@ -77,8 +63,9 @@ SL.Router.register('profile', async (container, params) => {
                 <div class="movie-poster-frame">
                   ${filmVisual(l)}
                   ${l.rating ? `<div class="profile-rating-strip">
-                    ${'★'.repeat(l.rating)}
+                    ${SL.ratingText(l.rating)}
                   </div>` : ''}
+                  ${l.is_rewatch ? `<div class="rewatch-poster-badge">Rewatch</div>` : ''}
                 </div>
                 <p class="profile-poster-title">${SL.esc(l.movie_title)}</p>
               </div>
@@ -137,7 +124,10 @@ SL.Router.register('profile', async (container, params) => {
               style="width:50px;aspect-ratio:2/3;object-fit:cover;border-radius:7px;border:1px solid var(--border);flex-shrink:0" />
             <div style="min-width:0">
               <p style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px">${SL.esc(r.movie_title)}</p>
-              ${r.rating ? `<div style="font-size:13px;color:var(--accent);margin-bottom:6px">${'★'.repeat(r.rating)}</div>` : ''}
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+                ${r.rating ? `<span style="font-size:13px;color:var(--accent)">${SL.ratingStars(r.rating)} ${SL.ratingText(r.rating)}</span>` : ''}
+                ${r.is_rewatch ? `<span class="rewatch-badge">Rewatch</span>` : ''}
+              </div>
               <p style="font-size:13px;color:var(--ghost);line-height:1.65">${SL.esc(r.review)}</p>
               <p style="font-size:11px;color:var(--mist);margin-top:6px">${SL.fmt.date(r.created_at)}</p>
             </div>
@@ -277,7 +267,7 @@ SL.Router.register('profile', async (container, params) => {
         <!-- Info -->
         <div style="flex:1;min-width:200px">
           <div style="display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:6px">
-            <h1 style="font-family:'DM Serif Display',serif;font-size:1.5rem;font-style:italic;color:var(--text)">
+            <h1 style="font-family:var(--font-heading);font-size:1.5rem;color:var(--text)">
               ${SL.esc(profile.display_name || profile.username)}
             </h1>
             <span style="font-size:13px;color:var(--mist)">@${SL.esc(profile.username)}</span>
@@ -345,7 +335,7 @@ SL.Router.register('profile', async (container, params) => {
         <button onclick="closeEditProfile()" style="position:absolute;top:14px;right:14px;background:none;border:none;cursor:pointer;color:var(--mist)">
           <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
-        <h2 style="font-family:'DM Serif Display',serif;font-size:1.3rem;font-style:italic;color:var(--text);margin-bottom:20px">Edit Profile</h2>
+        <h2 style="font-family:var(--font-heading);font-size:1.3rem;color:var(--text);margin-bottom:20px">Edit Profile</h2>
         <div style="display:flex;flex-direction:column;gap:14px">
           <div class="form-group">
             <label class="input-label">Display Name</label>

@@ -28,6 +28,9 @@ SL.Auth = (() => {
     window._supabase.auth.onAuthStateChange((event, session) => {
       notify(event, session);
       SL.Nav?.update();
+      if (event === 'PASSWORD_RECOVERY') {
+        SL.AuthPanel?.open('update_password');
+      }
     });
     return _session;
   }
@@ -62,6 +65,19 @@ SL.Auth = (() => {
     if (error) throw error;
   }
 
+  async function resetPassword(email) {
+    const redirectTo = `${window.location.origin}${window.location.pathname}`;
+    const { data, error } = await window._supabase.auth.resetPasswordForEmail(email, { redirectTo });
+    if (error) throw error;
+    return data;
+  }
+
+  async function updatePassword(password) {
+    const { data, error } = await window._supabase.auth.updateUser({ password });
+    if (error) throw error;
+    return data;
+  }
+
   async function updateProfile(updates) {
     const id = uid();
     if (!id) throw new Error('Not authenticated');
@@ -72,7 +88,7 @@ SL.Auth = (() => {
     if (error) throw error;
   }
 
-  return { init, signUp, signIn, signOut, updateProfile, session, user, uid, isAuthed, onAuthChange };
+  return { init, signUp, signIn, signOut, resetPassword, updatePassword, updateProfile, session, user, uid, isAuthed, onAuthChange };
 })();
 
 // ══════════════════════════════════════════════════════════════════
@@ -99,6 +115,76 @@ SL.AuthPanel = (() => {
 
   function render() {
     const isLogin = mode === 'login';
+    const isReset = mode === 'reset';
+    const isUpdate = mode === 'update_password';
+
+    if (isReset || isUpdate) {
+      box.innerHTML = `
+        <button id="auth-close" class="btn btn-icon" style="position:absolute;top:16px;right:16px;z-index:2"
+          onclick="SL.AuthPanel.close()">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path d="M18 6 6 18M6 6l12 12"/>
+          </svg>
+        </button>
+
+        <div style="text-align:center;margin-bottom:28px">
+          <div style="font-family:var(--font-heading);font-size:1.8rem;letter-spacing:0.1em;color:var(--accent);margin-bottom:6px">SINELOG</div>
+          <h2 style="font-family:var(--font-heading);font-size:1.4rem;color:var(--text)">${isUpdate ? 'Create new password' : 'Reset password'}</h2>
+          <p style="font-size:13px;color:var(--mist);margin-top:4px">${isUpdate ? 'Choose a new password for your account' : 'Send yourself a password reset link'}</p>
+        </div>
+
+        <div id="auth-error" style="display:none;background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.25);border-radius:8px;padding:10px 14px;font-size:13px;color:#dc2626;margin-bottom:16px"></div>
+
+        <form id="auth-form" style="display:flex;flex-direction:column;gap:14px">
+          ${isReset ? `<div class="form-group">
+            <label class="input-label">Email</label>
+            <input class="input" id="auth-email" type="email" placeholder="you@email.com" autocomplete="email" required />
+          </div>` : `
+          <div class="form-group">
+            <label class="input-label">New Password</label>
+            <input class="input" id="auth-new-password" type="password" placeholder="••••••••" autocomplete="new-password" minlength="6" required />
+          </div>`}
+          <button type="submit" class="btn btn-primary btn-lg" id="auth-submit" style="margin-top:4px;width:100%;justify-content:center">
+            ${isUpdate ? 'Update Password' : 'Send Reset Link'}
+          </button>
+        </form>
+
+        ${isReset ? `
+        <p style="text-align:center;font-size:13px;color:var(--mist);margin-top:20px">
+          Remembered your password?
+          <button onclick="SL.AuthPanel.toggle()" style="background:none;border:none;color:var(--accent);cursor:pointer;font-family:inherit;font-size:inherit;font-weight:600;margin-left:4px">
+            Sign in
+          </button>
+        </p>` : ''}
+      `;
+
+      document.getElementById('auth-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const errEl = document.getElementById('auth-error');
+        const submitBtn = document.getElementById('auth-submit');
+        const email = document.getElementById('auth-email')?.value.trim();
+        const newPassword = document.getElementById('auth-new-password')?.value;
+        errEl.style.display = 'none';
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<div class="spinner spinner-sm"></div>';
+        try {
+          if (isUpdate) {
+            await SL.Auth.updatePassword(newPassword);
+          } else {
+            await SL.Auth.resetPassword(email);
+          }
+          close();
+          SL.toast(isUpdate ? 'Password updated.' : 'Password reset link sent. Check your email.');
+        } catch (err) {
+          errEl.textContent = err.message;
+          errEl.style.display = 'block';
+          submitBtn.disabled = false;
+          submitBtn.textContent = isUpdate ? 'Update Password' : 'Send Reset Link';
+        }
+      });
+      return;
+    }
+
     box.innerHTML = `
       <button id="auth-close" class="btn btn-icon" style="position:absolute;top:16px;right:16px;z-index:2"
         onclick="SL.AuthPanel.close()">
@@ -108,8 +194,8 @@ SL.AuthPanel = (() => {
       </button>
 
       <div style="text-align:center;margin-bottom:28px">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;letter-spacing:0.1em;color:var(--accent);margin-bottom:6px">SINELOG</div>
-        <h2 style="font-family:'DM Serif Display',serif;font-size:1.4rem;font-style:italic;color:var(--text)">
+        <div style="font-family:var(--font-heading);font-size:1.8rem;letter-spacing:0.1em;color:var(--accent);margin-bottom:6px">SINELOG</div>
+        <h2 style="font-family:var(--font-heading);font-size:1.4rem;color:var(--text)">
           ${isLogin ? 'Welcome back' : 'Join the log'}
         </h2>
         <p style="font-size:13px;color:var(--mist);margin-top:4px">
@@ -144,6 +230,13 @@ SL.AuthPanel = (() => {
           ${isLogin ? 'Sign In' : 'Create Account'}
         </button>
       </form>
+
+      ${isLogin ? `
+      <p style="text-align:center;font-size:13px;margin-top:12px">
+        <button onclick="SL.AuthPanel.reset()" style="background:none;border:none;color:var(--accent);cursor:pointer;font-family:inherit;font-size:inherit;font-weight:600">
+          Forgot password?
+        </button>
+      </p>` : ''}
 
       <p style="text-align:center;font-size:13px;color:var(--mist);margin-top:20px">
         ${isLogin ? "Don't have an account?" : 'Already have an account?'}
@@ -194,5 +287,10 @@ SL.AuthPanel = (() => {
     render();
   }
 
-  return { open, close, toggle };
+  function reset() {
+    mode = 'reset';
+    render();
+  }
+
+  return { open, close, toggle, reset };
 })();

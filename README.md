@@ -1,16 +1,15 @@
 # SineLog
 
-SineLog is a personal film diary and discovery app built with vanilla JavaScript, Supabase, and TMDB. Users can browse films, log watches, rate and review movies, maintain a watchlist, follow other users, compare taste, and save visual keyframes for films they log.
+SineLog is a personal film diary and discovery app built with vanilla JavaScript, Supabase, and TMDB. Users can browse films, log watches, rate and review movies, maintain a watchlist, follow other users, and compare taste.
 
 ## Features
 
 - Movie discovery through TMDB trending, top-rated, now-playing, upcoming, genre, person, and search data.
 - Authentication and profiles through Supabase.
-- Film logging with rating, review, liked state, watched date, and pinned keyframes.
+- Film logging with half-star rating, review, liked state, and watched date.
 - Watchlist management.
 - Social activity feed with likes.
 - Profile tabs for logged films, watchlist, liked films, and reviews.
-- Cinematography Grid that lets users pin up to four TMDB stills to a log entry.
 - AI Taste Match using Puter AI when available.
 
 ## Tech Stack
@@ -32,15 +31,13 @@ SineLog is a personal film diary and discovery app built with vanilla JavaScript
 - `ui/` contains page-level views: home, feed, profile, and browse.
 - `styles.css` contains the design system, responsive styles, modal styles, and reusable UI classes.
 - `supabase-schema.sql` contains the full schema for a new Supabase project.
-- `supabase-migration-cinematic-features.sql` adds keyframe support to an existing Supabase project.
 
 ## Setup
 
 1. Create a Supabase project.
 2. Run `supabase-schema.sql` in the Supabase SQL editor for a fresh database.
-3. If your database already existed before the keyframe feature, run `supabase-migration-cinematic-features.sql`.
-4. Create a TMDB API key.
-5. Add your keys in `app.js`:
+3. Create a TMDB API key.
+4. Add your keys in `app.js`:
 
 ```js
 SL.CONFIG = {
@@ -50,7 +47,7 @@ SL.CONFIG = {
 };
 ```
 
-6. Open `index.html` in a browser, or serve the folder with a static web server.
+5. Open `index.html` in a browser, or serve the folder with a static web server.
 
 ## Demo Checklist
 
@@ -60,23 +57,22 @@ Use this checklist before presenting:
 - Home page displays trending rows and hero film.
 - Search finds a movie and opens the movie modal.
 - A user can sign up or sign in.
-- A signed-in user can log a film with rating, review, watched date, and keyframes.
+- A signed-in user can log a film with rating, review, and watched date.
 - Updating an existing log preserves saved fields.
 - Watchlist add/remove shows a toast.
-- Feed loads recent logs and displays keyframe details when present.
+- Feed loads recent logs.
 - Profile shows logged films, reviews, liked films, and watchlist.
 - Layout remains usable on desktop and mobile widths.
 
 ## Known Limitations
 
-- Keyframes depend on whether TMDB has backdrop stills for a movie.
-- AI Taste Match depends on the Puter AI script being available in the browser.
+- AI Taste Match depends on the locally written script available.
 - The app uses a simple vanilla JavaScript router, so page URLs do not represent deep links.
 
 ## Rubric Alignment
 
-- Core functionality: browsing, auth, logging, watchlist, feed, profile, keyframe grids, and taste matching.
+- Core functionality: browsing, auth, logging, watchlist, feed, profile, and taste matching.
 - JavaScript logic: modular namespaces for router, store, TMDB API, modal, auth, nav, and page views.
-- UI: responsive modal, profile tabs, reusable buttons, and poster/keyframe grids.
+- UI: responsive modal, profile tabs, reusable buttons, and poster grids.
 - UX: loaders, empty states, toasts, disabled states during saves, auth prompts, and clear setup errors.
 - Code quality: separated files by responsibility, named helpers, schema/migration files, and this README.

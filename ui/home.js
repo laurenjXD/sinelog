@@ -11,7 +11,7 @@ SL.Router.register('home', async (container) => {
         <div>Loading featured films...</div>
       </div>
       <!-- Rows skeleton -->
-      <div style="max-width:1200px;margin:0 auto;padding:40px 20px">
+      <div class="home-section-shell">
         ${[1,2,3].map(() => `
           <div style="margin-bottom:40px">
             <div style="height:20px;width:180px;background:var(--surface-2);border-radius:6px;margin-bottom:16px"></div>
@@ -31,6 +31,10 @@ SL.Router.register('home', async (container) => {
     SL.TMDB.upcoming(),
   ]);
 
+  const today = new Date().toISOString().slice(0, 10);
+  const futureUpcoming = (upcoming.results || [])
+    .filter(movie => !movie.release_date || movie.release_date >= today)
+    .sort((a, b) => String(a.release_date || '9999').localeCompare(String(b.release_date || '9999')));
   const heroMovies = trending.results.slice(0, 6);
   if (!heroMovies.length) {
     container.innerHTML = `
@@ -76,7 +80,7 @@ SL.Router.register('home', async (container) => {
           <div style="max-width:480px">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
               <span style="font-size:10px;text-transform:uppercase;letter-spacing:0.15em;font-weight:700;color:rgba(255,255,255,0.7)">
-                ${movie.vote_average ? `★ ${Number(movie.vote_average).toFixed(1)}` : ''}
+                ${movie.vote_average ? `★ ${Number(movie.vote_average).toFixed(1)}` : 'No rating yet'}
               </span>
               ${(movie.genre_ids||[]).slice(0,2).map(id => `
                 <span style="font-size:10px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.25);border-radius:4px;padding:2px 8px;color:rgba(255,255,255,0.85)">
@@ -84,7 +88,7 @@ SL.Router.register('home', async (container) => {
                 </span>
               `).join('')}
             </div>
-            <h1 style="font-family:'DM Serif Display',serif;font-size:clamp(1.8rem,4vw,2.8rem);font-style:italic;line-height:1.1;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,0.4);margin-bottom:12px">
+            <h1 style="font-family:var(--font-heading);font-size:clamp(1.8rem,4vw,2.8rem);line-height:1.1;color:#fff;text-shadow:0 2px 12px rgba(0,0,0,0.4);margin-bottom:12px">
               ${SL.esc(movie.title)}
             </h1>
             <p style="font-size:14px;line-height:1.7;color:rgba(255,255,255,0.75);text-shadow:0 1px 4px rgba(0,0,0,0.4);margin-bottom:20px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden">
@@ -131,7 +135,7 @@ SL.Router.register('home', async (container) => {
             loading="lazy"
             class="movie-card-poster"
           />
-          ${m.vote_average ? `<div class="movie-card-rating">★ ${Number(m.vote_average).toFixed(1)}</div>` : ''}
+          ${m.vote_average ? `<div class="movie-card-rating">★ ${Number(m.vote_average).toFixed(1)}</div>` : `<div class="movie-card-rating muted">No rating</div>`}
         </div>
         <p class="movie-card-title">${SL.esc(m.title)}</p>
         <p class="movie-card-year">${SL.fmt.year(m.release_date)}</p>
@@ -139,13 +143,23 @@ SL.Router.register('home', async (container) => {
     `;
   }
 
-  function rowSection(title, movies, emoji = '') {
+  function rowSection(title, movies, emoji = '', rowId = '') {
     return `
-      <div style="margin-bottom:44px">
+      <div class="home-movie-section">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-          <h2 style="font-family:'DM Serif Display',serif;font-size:1.35rem;font-style:italic;color:var(--text);line-height:1.15">${emoji ? emoji + ' ' : ''}${title}</h2>
+          <h2 class="section-heading">${emoji ? emoji + ' ' : ''}${title}</h2>
+          ${movies.length ? `
+            <div class="row-scroll-actions" data-scroll-actions="${rowId}">
+              <button class="row-scroll-btn" type="button" data-scroll-row="${rowId}" data-scroll-dir="-1" aria-label="Scroll ${SL.esc(title)} left">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+              </button>
+              <button class="row-scroll-btn" type="button" data-scroll-row="${rowId}" data-scroll-dir="1" aria-label="Scroll ${SL.esc(title)} right">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+              </button>
+            </div>
+          ` : ''}
         </div>
-        <div class="movie-row">
+        <div class="movie-row" data-row-id="${rowId}">
           ${movies.length ? movies.map(m => movieCard(m)).join('') : `
             <div class="empty-state" style="padding:24px 0;text-align:left">
               <div class="empty-state-title">Nothing to show here yet</div>
@@ -161,16 +175,16 @@ SL.Router.register('home', async (container) => {
     <div id="home-root">
       <div id="hero-container">${renderHero(heroMovies[0])}</div>
 
-      <div style="max-width:1200px;margin:0 auto;padding:40px 20px 60px">
+      <div class="home-section-shell">
 
-        ${rowSection('Trending This Week', trending.results.slice(0, 12), '🔥')}
-        ${rowSection('Top Rated', topRated.results.slice(0, 12), '⭐')}
-        ${rowSection('Now Playing', nowPlaying.results.slice(0, 12), '🎬')}
-        ${rowSection('Coming Soon', upcoming.results.slice(0, 12), '📅')}
+        ${rowSection('Trending This Week', trending.results.slice(0, 12), '🔥', 'trending')}
+        ${rowSection('Top Rated', topRated.results.slice(0, 12), '⭐', 'top-rated')}
+        ${rowSection('Now Playing', nowPlaying.results.slice(0, 12), '🎬', 'now-playing')}
+        ${rowSection('Coming Soon', futureUpcoming.slice(0, 12), '📅', 'coming-soon')}
 
         <!-- Genre Grid -->
         <div style="margin-top:16px">
-          <h2 style="font-family:'DM Serif Display',serif;font-size:1.25rem;font-style:italic;color:var(--text);margin-bottom:16px">🎭 Browse by Genre</h2>
+          <h2 class="section-heading" style="margin-bottom:16px">🎭 Browse by Genre</h2>
           <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px">
             ${genres.map(g => `
               <button onclick="SL.Router.navigate('search-page',{genreId:${g.id},genreName:'${g.name}'})"
@@ -212,6 +226,29 @@ SL.Router.register('home', async (container) => {
   document.querySelectorAll('[data-dot]').forEach(d => {
     d.addEventListener('click', () => { clearInterval(heroInterval); setHero(+d.dataset.dot); startInterval(); });
   });
+
+  document.querySelectorAll('[data-scroll-row]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const row = document.querySelector(`[data-row-id="${btn.dataset.scrollRow}"]`);
+      if (!row) return;
+      row.scrollBy({
+        left: Number(btn.dataset.scrollDir) * Math.max(260, row.clientWidth * 0.82),
+        behavior: 'smooth',
+      });
+    });
+  });
+
+  function updateRowScrollControls() {
+    document.querySelectorAll('.movie-row[data-row-id]').forEach(row => {
+      const actions = document.querySelector(`[data-scroll-actions="${row.dataset.rowId}"]`);
+      if (!actions) return;
+      const canScroll = row.scrollWidth > row.clientWidth + 8;
+      actions.classList.toggle('visible', canScroll);
+    });
+  }
+
+  updateRowScrollControls();
+  window.addEventListener('resize', SL.debounce(updateRowScrollControls, 150));
 
   startInterval();
 });

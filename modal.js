@@ -36,24 +36,19 @@ SL.Modal = (() => {
     `;
 
     try {
-      const [movie, credits, images, myLog, inWatchlist] = await Promise.all([
+      const [movie, credits, myLog, inWatchlist] = await Promise.all([
         SL.TMDB.detail(id),
         SL.TMDB.credits(id),
-        SL.TMDB.images(id).catch(() => ({ backdrops: [] })),
         SL.Store.logs.getMyLog(id),
         SL.Store.watchlist.isInList(id),
       ]);
 
       selectedStar = myLog?.rating || 0;
-      let selectedKeyframes = Array.isArray(myLog?.keyframes) ? myLog.keyframes.slice(0, 4) : [];
-      const imageChoices = (images.backdrops || [])
-        .filter(img => img.file_path)
-        .slice(0, 12)
-        .map(img => img.file_path);
 
       const trailerKey = movie.videos?.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube')?.key;
 
       sheet.innerHTML = `
+        <div class="modal-scroll-content">
         <!-- Backdrop -->
         <div style="position:relative">
           <img id="modal-backdrop-img"
@@ -90,7 +85,7 @@ SL.Modal = (() => {
 
             <!-- Title block -->
             <div style="padding-bottom:4px;min-width:0">
-              <h2 style="font-family:'DM Serif Display',serif;font-size:clamp(1.3rem,3.5vw,1.9rem);font-style:italic;line-height:1.15;color:var(--text);margin-bottom:6px">
+              <h2 style="font-family:var(--font-heading);font-size:clamp(1.3rem,3.5vw,1.9rem);line-height:1.15;color:var(--text);margin-bottom:6px">
                 ${SL.esc(movie.title)}
               </h2>
               <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:12px;color:var(--mist)">
@@ -115,13 +110,23 @@ SL.Modal = (() => {
           <!-- Cast -->
           ${credits.cast?.length ? `
           <div style="margin-bottom:24px">
-            <p style="font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:var(--mist);font-weight:600;margin-bottom:12px">Cast</p>
-            <div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px">
+              <p style="font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:var(--mist);font-weight:600">Cast</p>
+              <div class="modal-cast-actions">
+                <button class="modal-cast-scroll-btn" type="button" data-cast-dir="-1" aria-label="Scroll cast left">
+                  <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
+                </button>
+                <button class="modal-cast-scroll-btn" type="button" data-cast-dir="1" aria-label="Scroll cast right">
+                  <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="modal-cast-rail" id="modal-cast-rail">
               ${credits.cast.slice(0,12).map(p => `
-                <div style="flex-shrink:0;width:60px;cursor:pointer" onclick="SL.Modal.openPerson(${p.id})">
+                <div class="modal-cast-card" onclick="SL.Modal.openPerson(${p.id})">
                   <img src="${SL.img.profile(p.profile_path)}"
-                    style="width:60px;height:60px;border-radius:50%;object-fit:cover;object-position:top;border:1px solid var(--border)" />
-                  <p style="font-size:10px;color:var(--mist);text-align:center;margin-top:5px;line-height:1.3;word-break:break-word">${SL.esc(p.name)}</p>
+                    class="modal-cast-photo" />
+                  <p class="modal-cast-name">${SL.esc(p.name)}</p>
                 </div>
               `).join('')}
             </div>
@@ -135,15 +140,20 @@ SL.Modal = (() => {
             <p style="font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:var(--mist);font-weight:600;margin-bottom:14px">Your Take</p>
 
             <!-- Stars -->
-            <div style="display:flex;align-items:center;gap:6px;margin-bottom:16px">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:16px;flex-wrap:wrap">
               <span style="font-size:11px;color:var(--mist);margin-right:4px">Rate:</span>
-              <div id="stars" style="display:flex;gap:2px">
-                ${[1,2,3,4,5].map(n => `
-                  <button class="star-btn ${n <= selectedStar ? 'lit' : ''}" data-n="${n}">★</button>
-                `).join('')}
+              <div id="stars" class="rating-scale">
+                ${[1,2,3,4,5].map(n => {
+                  const fill = Math.max(0, Math.min(1, Number(selectedStar || 0) - (n - 1))) * 100;
+                  return `
+                  <button class="rating-star" data-star="${n}" type="button" aria-label="${n} star">
+                    <span class="rating-star-empty">★</span>
+                    <span class="rating-star-fill" style="width:${fill}%">★</span>
+                  </button>`;
+                }).join('')}
               </div>
               <span id="star-label" style="font-size:12px;color:var(--mist);margin-left:6px">
-                ${SL.STAR_LABELS[selectedStar] || ''}
+                ${selectedStar ? `${SL.ratingText(selectedStar)} - ${SL.ratingLabel(selectedStar)}` : ''}
               </span>
             </div>
 
@@ -156,30 +166,21 @@ SL.Modal = (() => {
                 </svg>
                 ${myLog?.liked ? 'Liked' : 'Like this film'}
               </button>
+              <button id="rewatch-toggle" class="btn btn-ghost btn-sm ${myLog?.is_rewatch ? 'rewatching' : ''}"
+                style="${myLog?.is_rewatch ? 'color:var(--accent);border-color:rgba(var(--accent-rgb),0.45);background:var(--accent-dim)' : ''}">
+                <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.1" viewBox="0 0 24 24">
+                  <path d="M3 12a9 9 0 0 1 15.4-6.4L21 8"/>
+                  <path d="M21 3v5h-5"/>
+                  <path d="M21 12a9 9 0 0 1-15.4 6.4L3 16"/>
+                  <path d="M3 21v-5h5"/>
+                </svg>
+                ${myLog?.is_rewatch ? 'Rewatch' : 'Mark rewatch'}
+              </button>
             </div>
 
             <!-- Review -->
             <textarea id="review-input" class="input" placeholder="Write your thoughts on this film…" rows="3"
               style="margin-bottom:14px">${SL.esc(myLog?.review || '')}</textarea>
-
-            <!-- Film table -->
-            ${imageChoices.length ? `
-            <div style="margin-bottom:16px">
-              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px">
-                <label class="input-label" style="margin:0">Cinematography Grid</label>
-                <span id="keyframe-count" style="font-size:11px;color:var(--mist)">${selectedKeyframes.length}/4 pinned</span>
-              </div>
-              <div id="keyframe-preview" class="keyframe-grid" style="margin-bottom:10px"></div>
-              <p style="font-size:12px;color:var(--mist);line-height:1.55;margin-bottom:10px">Tap stills to pin up to four visual notes for this log.</p>
-              <div id="keyframe-choices" class="keyframe-grid">
-                ${imageChoices.map(path => `
-                  <button type="button" class="keyframe-choice" data-path="${path}" title="Pin keyframe" aria-label="Pin this keyframe" aria-pressed="${selectedKeyframes.includes(path)}"
-                    style="padding:0;border:2px solid ${selectedKeyframes.includes(path) ? 'var(--accent)' : 'var(--border)'};border-radius:7px;overflow:hidden;background:var(--surface-2);cursor:pointer;position:relative">
-                    <img src="${SL.img.backdrop(path, 'w300')}" alt="" style="width:100%;aspect-ratio:16/9;object-fit:cover;display:block" />
-                  </button>
-                `).join('')}
-              </div>
-            </div>` : ''}
 
             <!-- Date -->
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
@@ -226,27 +227,51 @@ SL.Modal = (() => {
           <!-- Similar movies -->
           <div id="similar-section" style="margin-top:28px"></div>
         </div>
+        </div>
       `;
 
       // ── Star interactions ─────────────────────────────────────
-      const starBtns = sheet.querySelectorAll('.star-btn');
+      const starBtns = sheet.querySelectorAll('.rating-star');
       const starLabel = document.getElementById('star-label');
+
+      function valueFromPointer(btn, event) {
+        const rect = btn.getBoundingClientRect();
+        const isHalf = event.clientX - rect.left <= rect.width / 2;
+        return Number(btn.dataset.star) - (isHalf ? 0.5 : 0);
+      }
 
       function setStars(n, preview=false) {
         if (!preview) selectedStar = n;
-        starBtns.forEach(b => b.classList.toggle('lit', +b.dataset.n <= n));
-        starLabel.textContent = SL.STAR_LABELS[n] || '';
+        starBtns.forEach(b => {
+          const star = Number(b.dataset.star);
+          const fill = Math.max(0, Math.min(1, Number(n || 0) - (star - 1))) * 100;
+          b.querySelector('.rating-star-fill').style.width = `${fill}%`;
+        });
+        starLabel.textContent = n ? `${SL.ratingText(n)} - ${SL.ratingLabel(n)}` : '';
       }
       setStars(selectedStar);
 
       starBtns.forEach(btn => {
-        btn.addEventListener('mouseenter', () => setStars(+btn.dataset.n, true));
+        btn.addEventListener('mousemove', (e) => setStars(valueFromPointer(btn, e), true));
+        btn.addEventListener('mouseenter', (e) => setStars(valueFromPointer(btn, e), true));
         btn.addEventListener('mouseleave', () => setStars(selectedStar, true));
-        btn.addEventListener('click', () => { selectedStar = +btn.dataset.n; setStars(selectedStar); });
+        btn.addEventListener('click', (e) => { selectedStar = valueFromPointer(btn, e); setStars(selectedStar); });
+      });
+
+      const castRail = document.getElementById('modal-cast-rail');
+      sheet.querySelectorAll('.modal-cast-scroll-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (!castRail) return;
+          castRail.scrollBy({
+            left: Number(btn.dataset.castDir) * Math.max(180, castRail.clientWidth * 0.82),
+            behavior: 'smooth',
+          });
+        });
       });
 
       // ── Like toggle ──────────────────────────────────────────
       let isLiked = myLog?.liked || false;
+      let isRewatch = myLog?.is_rewatch || false;
       document.getElementById('like-toggle')?.addEventListener('click', async () => {
         isLiked = !isLiked;
         const btn = document.getElementById('like-toggle');
@@ -256,41 +281,14 @@ SL.Modal = (() => {
         btn.childNodes[btn.childNodes.length-1].textContent = isLiked ? ' Liked' : ' Like this film';
       });
 
-      // ── Log button ───────────────────────────────────────────
-      function renderKeyframePreview() {
-        const preview = document.getElementById('keyframe-preview');
-        const count = document.getElementById('keyframe-count');
-        if (!preview) return;
-        const cells = Array.from({ length: 4 }, (_, i) => selectedKeyframes[i] || '');
-        preview.innerHTML = cells.map(path => path ? `
-          <div style="border-radius:7px;overflow:hidden;background:var(--surface-2);border:1px solid var(--border)">
-            <img src="${SL.img.backdrop(path, 'w300')}" alt="" style="width:100%;aspect-ratio:16/9;object-fit:cover;display:block" />
-          </div>
-        ` : `
-          <div style="aspect-ratio:16/9;border:1px dashed var(--border-strong);border-radius:7px;background:var(--surface-2)"></div>
-        `).join('');
-        if (count) count.textContent = `${selectedKeyframes.length}/4 pinned`;
-        sheet.querySelectorAll('.keyframe-choice').forEach(choice => {
-          const selected = selectedKeyframes.includes(choice.dataset.path);
-          choice.style.borderColor = selected ? 'var(--accent)' : 'var(--border)';
-          choice.setAttribute('aria-pressed', String(selected));
-        });
-      }
-
-      sheet.querySelectorAll('.keyframe-choice').forEach(choice => {
-        choice.addEventListener('click', () => {
-          const path = choice.dataset.path;
-          if (selectedKeyframes.includes(path)) {
-            selectedKeyframes = selectedKeyframes.filter(item => item !== path);
-          } else if (selectedKeyframes.length < 4) {
-            selectedKeyframes.push(path);
-          } else {
-            selectedKeyframes = [...selectedKeyframes.slice(1), path];
-          }
-          renderKeyframePreview();
-        });
+      document.getElementById('rewatch-toggle')?.addEventListener('click', async () => {
+        isRewatch = !isRewatch;
+        const btn = document.getElementById('rewatch-toggle');
+        btn.style.color = isRewatch ? 'var(--accent)' : '';
+        btn.style.borderColor = isRewatch ? 'rgba(var(--accent-rgb),0.45)' : '';
+        btn.style.background = isRewatch ? 'var(--accent-dim)' : '';
+        btn.childNodes[btn.childNodes.length-1].textContent = isRewatch ? ' Rewatch' : ' Mark rewatch';
       });
-      renderKeyframePreview();
 
       document.getElementById('log-btn')?.addEventListener('click', async () => {
         if (!SL.Auth.isAuthed()) { SL.AuthPanel.open(); return; }
@@ -305,11 +303,11 @@ SL.Modal = (() => {
               rating: selectedStar,
               review: document.getElementById('review-input').value.trim(),
               liked: isLiked,
+              rewatch: isRewatch,
               watchedOn: document.getElementById('watched-date').value,
-              keyframes: selectedKeyframes,
             }
           );
-          SL.toast(`"${movie.title}" logged! ${SL.STAR_LABELS[selectedStar]}`);
+          SL.toast(`"${movie.title}" logged! ${SL.ratingText(selectedStar)}`);
           btn.innerHTML = '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg> Update Log';
         } catch(e) { SL.toast(e.message); }
         finally { btn.disabled = false; }
@@ -350,61 +348,6 @@ SL.Modal = (() => {
     }
   }
 
-  function normalizeAiText(response) {
-    if (typeof response === 'string') return response;
-    if (Array.isArray(response?.message?.content)) {
-      return response.message.content.map(part => part?.text || part?.content || '').join('');
-    }
-    if (response?.message?.content) return response.message.content;
-    if (response?.choices?.[0]?.message?.content) return response.choices[0].message.content;
-    if (response?.content) return response.content;
-    if (response?.text) return response.text;
-    const text = String(response || '');
-    return text === '[object Object]' ? JSON.stringify(response, null, 2) : text;
-  }
-
-  function compactLogsForPrompt(logs) {
-    return logs.slice(0, 30).map(log => {
-      const review = log.review ? ` Review: ${log.review.slice(0, 220)}` : '';
-      const liked = log.liked ? ' liked' : ' not liked';
-      return `- ${log.movie_title}: ${log.rating || 'unrated'}/5,${liked}.${review}`;
-    }).join('\n');
-  }
-
-  function buildTastePrompt(movie, credits, logs) {
-    const director = credits.crew?.find(c => c.job === 'Director')?.name || 'Unknown';
-    const cast = (credits.cast || []).slice(0, 5).map(p => p.name).join(', ') || 'Unknown';
-    const genres = (movie.genres || []).map(g => g.name).join(', ') || 'Unknown';
-
-    return `
-You are SineLog's Taste Match feature. Analyze whether this movie fits the user's taste.
-
-Movie:
-Title: ${movie.title}
-Year: ${SL.fmt.year(movie.release_date)}
-Genres: ${genres}
-Director: ${director}
-Cast: ${cast}
-Runtime: ${SL.fmt.runtime(movie.runtime) || 'Unknown'}
-TMDB rating: ${movie.vote_average ? Number(movie.vote_average).toFixed(1) : 'Unknown'}
-Overview: ${movie.overview || 'No overview available.'}
-
-User film history:
-${compactLogsForPrompt(logs)}
-
-Return a concise result in this exact format:
-Taste Match: [0-100]%
-Why it fits: [2 short sentences]
-Reasons:
-- [reason 1]
-- [reason 2]
-- [reason 3]
-Possible mismatch: [1 short sentence]
-
-Be specific to the films and preferences shown. Do not mention that you are an AI.
-`.trim();
-  }
-
   function localTasteMatch(movie, credits, logs, reason = '') {
     const rated = logs.filter(log => log.rating);
     const avgRating = rated.length
@@ -428,15 +371,7 @@ Reasons:
 - You have ${likedCount} liked film${likedCount === 1 ? '' : 's'}, which suggests stronger positive taste signals than ratings alone.
 - ${reviewCount ? `Your written reviews give the matcher extra context from ${reviewCount} film${reviewCount === 1 ? '' : 's'}.` : 'Adding written reviews will make future taste matches more specific.'}
 - ${director !== 'the director' ? `${director}'s film is compared against your existing diary patterns.` : 'The match is based on your logged history and this movie metadata.'}
-Possible mismatch: This fallback estimate is less specific because Puter AI was unavailable${reason ? ` (${reason})` : ''}.`;
-  }
-
-  function withTimeout(promise, ms, message) {
-    let timer;
-    const timeout = new Promise((_, reject) => {
-      timer = setTimeout(() => reject(new Error(message)), ms);
-    });
-    return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+Possible mismatch: This estimate uses your local diary signals only${reason ? ` (${reason})` : ''}.`;
   }
 
   async function generateTasteMatch(movie, credits) {
@@ -486,42 +421,10 @@ Possible mismatch: This fallback estimate is less specific because Puter AI was 
         return;
       }
 
-      const prompt = buildTastePrompt(movie, credits, logs);
-      const fallbackText = localTasteMatch(movie, credits, logs);
+      const matchText = localTasteMatch(movie, credits, logs);
       result.innerHTML = `
-        <div style="font-size:13px;color:var(--ghost);line-height:1.75;white-space:pre-wrap">${SL.esc(fallbackText)}</div>
-        <p style="font-size:11px;color:var(--mist);margin-top:12px">Trying Puter AI for a more specific match...</p>
+        <div style="font-size:13px;color:var(--ghost);line-height:1.75;white-space:pre-wrap">${SL.esc(matchText)}</div>
       `;
-
-      if (window.puter?.ai?.chat) {
-        try {
-          const response = await withTimeout(
-            puter.ai.chat(prompt, {
-              model: 'gpt-5-nano',
-              temperature: 0.35,
-              max_tokens: 420,
-            }),
-            8000,
-            'Puter AI timed out'
-          );
-          const text = normalizeAiText(response).trim();
-          if (!text) {
-            throw new Error('empty Puter response');
-          }
-          result.innerHTML = `
-            <div style="font-size:13px;color:var(--ghost);line-height:1.75;white-space:pre-wrap">${SL.esc(text)}</div>
-          `;
-        } catch (puterError) {
-          console.warn('Puter taste match unavailable, using local fallback:', puterError);
-          result.innerHTML = `
-            <div style="font-size:13px;color:var(--ghost);line-height:1.75;white-space:pre-wrap">${SL.esc(localTasteMatch(movie, credits, logs, puterError.message || 'request failed'))}</div>
-          `;
-        }
-      } else {
-        result.innerHTML = `
-          <div style="font-size:13px;color:var(--ghost);line-height:1.75;white-space:pre-wrap">${SL.esc(localTasteMatch(movie, credits, logs, 'Puter script did not load'))}</div>
-        `;
-      }
     } catch(e) {
       console.error('Taste match error:', e);
       result.innerHTML = `
@@ -559,7 +462,8 @@ Possible mismatch: This fallback estimate is less specific because Puter AI was 
                 onclick="SL.Router.navigate('profile',{userId:'${r.user_id}'});SL.Modal.close()">
                 ${SL.esc(r.display_name || r.username)}
               </button>
-              ${r.rating ? `<span style="font-size:11px;color:var(--accent)">${'★'.repeat(r.rating)}</span>` : ''}
+              ${r.rating ? `<span style="font-size:11px;color:var(--accent)">${SL.ratingStars(r.rating)} ${SL.ratingText(r.rating)}</span>` : ''}
+              ${r.is_rewatch ? `<span class="rewatch-badge">Rewatch</span>` : ''}
               <span style="font-size:11px;color:var(--mist)">${SL.fmt.date(r.created_at)}</span>
             </div>
             <p style="font-size:13px;color:var(--ghost);line-height:1.6">${SL.esc(r.review)}</p>

@@ -27,8 +27,7 @@ SL.Router.register('feed', async (container, params) => {
 
   function feedCard(entry, myLikes = []) {
     const liked = myLikes.includes(entry.id);
-    const stars = entry.rating ? '★'.repeat(entry.rating) + '☆'.repeat(5 - entry.rating) : '';
-    const keyframes = Array.isArray(entry.keyframes) ? entry.keyframes.filter(Boolean).slice(0, 4) : [];
+    const stars = SL.ratingStars(entry.rating);
     return `
       <div class="feed-card" style="display:flex;gap:14px;padding:16px;border-bottom:1px solid var(--border);margin-bottom:14px">
         <!-- Avatar -->
@@ -64,21 +63,16 @@ SL.Router.register('feed', async (container, params) => {
               </p>
               ${stars ? `
                 <div class="feed-rating-row">
-                  <span class="feed-stars">${stars.slice(0, entry.rating)}</span>
-                  <span class="feed-stars feed-star-empty">${stars.slice(entry.rating)}</span>
-                  <span style="font-size:11px;color:var(--mist)">${SL.STAR_LABELS[entry.rating] || ''}</span>
+                  <span class="feed-stars">${stars}</span>
+                  <span style="font-size:11px;color:var(--mist)">${SL.ratingText(entry.rating)} - ${SL.ratingLabel(entry.rating)}</span>
                 </div>
               ` : ''}
               ${entry.liked ? `<span style="font-size:11px;color:#e05555">❤️ Liked</span>` : ''}
+              ${entry.is_rewatch ? `<span class="rewatch-badge" style="margin-left:${entry.liked ? '8px' : '0'}">Rewatch</span>` : ''}
               ${entry.review ? `
                 <p class="feed-review">
                   "${SL.esc(entry.review)}"
                 </p>
-              ` : ''}
-              ${keyframes.length ? `
-                <div class="film-table-mini" style="margin-top:10px">
-                  ${keyframes.map(path => `<img src="${SL.img.backdrop(path, 'w300')}" alt="" />`).join('')}
-                </div>
               ` : ''}
             </div>
           </div>
@@ -177,7 +171,7 @@ SL.Router.register('feed', async (container, params) => {
     container.innerHTML = `
       <div style="max-width:640px;margin:0 auto;padding:104px 20px 80px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px">
-          <h1 style="font-family:'DM Serif Display',serif;font-size:1.6rem;font-style:italic;color:var(--text)">Activity Feed</h1>
+          <h1 style="font-family:var(--font-heading);font-size:1.6rem;color:var(--text)">Activity Feed</h1>
         </div>
 
         <!-- Tabs -->

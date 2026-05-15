@@ -18,6 +18,12 @@ SL.TMDB = (() => {
     topRated:   (page=1)            => request('/movie/top_rated',    { page }),
     nowPlaying: (page=1)            => request('/movie/now_playing',  { page }),
     upcoming:   (page=1)            => request('/movie/upcoming',     { page }),
+    upcomingFuture: (page=1)        => request('/discover/movie', {
+      page,
+      sort_by: 'primary_release_date.asc',
+      'primary_release_date.gte': new Date().toISOString().slice(0, 10),
+      'vote_count.gte': 0,
+    }),
     popular:    (page=1)            => request('/movie/popular',      { page }),
     byGenre:    (id, page=1)        => request('/discover/movie', { with_genres: id, sort_by:'popularity.desc', page }),
     byGenres:   (ids, page=1)       => request('/discover/movie', { with_genres: ids, sort_by:'vote_average.desc', 'vote_count.gte': 250, page }),

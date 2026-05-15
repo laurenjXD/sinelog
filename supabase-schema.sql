@@ -58,10 +58,10 @@ CREATE TABLE public.film_logs (
     tmdb_id      INTEGER NOT NULL,
     movie_title  TEXT NOT NULL,
     poster_path  TEXT,
-    rating       SMALLINT CHECK (rating >= 1 AND rating <= 5),
+    rating       NUMERIC(2,1) CHECK (rating >= 0.5 AND rating <= 5),
     review       TEXT,
     liked        BOOLEAN DEFAULT FALSE,
-    keyframes        JSONB DEFAULT '[]'::jsonb,
+    is_rewatch   BOOLEAN DEFAULT FALSE,
     watched_on   DATE DEFAULT CURRENT_DATE,
     created_at   TIMESTAMPTZ DEFAULT NOW(),
     updated_at   TIMESTAMPTZ DEFAULT NOW(),
@@ -146,7 +146,7 @@ SELECT
     fl.rating,
     fl.review,
     fl.liked,
-    fl.keyframes,
+    fl.is_rewatch,
     fl.watched_on,
     fl.created_at,
     (SELECT COUNT(*) FROM public.review_likes rl WHERE rl.log_id = fl.id) AS like_count
@@ -173,4 +173,3 @@ SELECT
 FROM public.profiles p;
 
 -- Existing SineLog projects can run this migration before replacing activity_feed.
--- ALTER TABLE public.film_logs ADD COLUMN IF NOT EXISTS keyframes JSONB DEFAULT '[]'::jsonb;
