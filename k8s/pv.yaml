@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: sinelog-logs-pv
+  labels:
+    app: sinelog
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 512Mi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /data/sinelog/logs   # Stored on the node (Docker Desktop host)
+  persistentVolumeReclaimPolicy: Retain

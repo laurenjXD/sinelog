@@ -5,10 +5,14 @@
 // ── Config  ──────────────────────────────────────────────────────
 window.SL = window.SL || {};
 
+// Keys are injected at runtime via /env-config.js (generated from K8s Secret).
+// See docker-entrypoint.sh and k8s/secret.yaml.
+const __env = window.__SL_ENV__ || {};
+
 SL.CONFIG = {
-  TMDB_KEY:    'ddac86fca5e5641419bcd9c466686a44',
-  SUPABASE_URL:  'https://xjgckobyncpbymwfmnki.supabase.co',
-  SUPABASE_ANON: 'sb_publishable_yq9Jc_CLyxL5mEyXzaFRGg_GpXCJRqD', 
+  TMDB_KEY:    __env.TMDB_KEY    || '',
+  SUPABASE_URL:  __env.SUPABASE_URL  || '',
+  SUPABASE_ANON: __env.SUPABASE_ANON || '',
   TMDB_BASE: 'https://api.themoviedb.org/3',
   IMG_BASE:  'https://image.tmdb.org/t/p/',
 };
@@ -92,6 +96,8 @@ SL.Router = (() => {
     try {
       if (pages[name]) {
         await pages[name](container, params);
+        // Update navbar state (e.g., highlighting active link)
+        if (window.SL?.Nav?.update) SL.Nav.update();
       } else {
         container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🎬</div><div class="empty-state-title">Page not found</div><div class="empty-state-text">This page does not exist yet.</div></div>';
       }

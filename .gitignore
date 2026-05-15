@@ -1,0 +1,24 @@
+# ───────────────────────────────────────────────────────────────
+#  SineLog — .gitignore
+# ───────────────────────────────────────────────────────────────
+
+# ── Secrets (NEVER commit these) ───────────────────────────────
+k8s/secret.yaml
+
+# ── OS files ───────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Editor ─────────────────────────────────────────────────────
+.vscode/settings.json
+.idea/
+*.suo
+*.user
+
+# ── Node (if ever used) ────────────────────────────────────────
+node_modules/
+npm-debug.log*
+
+# ── Docker local build artifacts ───────────────────────────────
+*.tar

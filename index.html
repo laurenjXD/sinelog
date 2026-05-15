@@ -50,7 +50,10 @@
 
   <!-- ═══════════ SCRIPTS ═══════════ -->
 
-  <!-- 1. Core config + utilities -->
+  <!-- 1a. Runtime env (injected from K8s Secret at container startup) -->
+  <script src="/env-config.js"></script>
+
+  <!-- 1b. Core config + utilities -->
   <script src="app.js"></script>
 
   <!-- 2. TMDB API -->

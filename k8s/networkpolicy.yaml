@@ -1,0 +1,39 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sinelog
+  namespace: sinelog
+  labels:
+    app: sinelog
+spec:
+  podSelector:
+    matchLabels:
+      app: sinelog
+
+  policyTypes:
+    - Ingress
+    - Egress
+
+  # ── Allow inbound traffic only from the nginx ingress controller ──
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8080
+
+  # ── Allow outbound DNS + HTTPS (Supabase / TMDB API) ─────────────
+  egress:
+    - ports:
+        - protocol: UDP
+          port: 53    # DNS
+        - protocol: TCP
+          port: 53    # DNS over TCP
+    - ports:
+        - protocol: TCP
+          port: 443   # HTTPS — Supabase, TMDB API

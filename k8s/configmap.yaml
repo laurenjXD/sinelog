@@ -12,6 +12,8 @@ data:
         server_name  _;
         root         /usr/share/nginx/html;
         index        index.html;
+        access_log   /dev/stdout;
+        error_log    /dev/stderr warn;
 
         gzip on;
         gzip_vary on;

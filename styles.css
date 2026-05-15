@@ -799,14 +799,21 @@ textarea.input {
   padding: 0;
 }
 
+.brand-button:hover .brand-mark {
+  background: var(--accent-dim);
+  transform: rotate(15deg);
+}
+
 .brand-mark {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 2px solid var(--accent);
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  /* Changed to squircle for modern look */
+  border: none;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .brand-name {
@@ -826,27 +833,46 @@ textarea.input {
 }
 
 .nav-link {
-  font-size: 16px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
   color: var(--mist);
   text-decoration: none;
-  transition: color 0.2s;
+  transition: all 0.25s ease;
   cursor: pointer;
   background: none;
   border: none;
-  padding: 0;
+  padding: 6px 4px;
   font-family: inherit;
+  position: relative;
 }
 
-.nav-link:hover,
-.nav-link.active {
+.nav-link:hover {
   color: var(--text);
 }
 
-.nav-link.accent {
+.nav-link.active {
   color: var(--accent);
 }
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 2px;
+  transform: scaleX(0);
+  transition: transform 0.25s ease;
+  transform-origin: center;
+}
+
+.nav-link.active::after {
+  transform: scaleX(1);
+}
+
 
 .loading-state {
   min-height: 180px;

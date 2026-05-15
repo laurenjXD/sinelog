@@ -7,27 +7,26 @@ SL.Nav = (() => {
     const user = SL.Auth.user();
     const authed = SL.Auth.isAuthed();
 
+    const currentRoute = SL.Router.current();
+
     navbar.innerHTML = `
     <div class="nav-shell">
-
-      <!-- Logo -->
-      <button class="brand-button" onclick="SL.Router.navigate('home')" aria-label="Go to SineLog home">
-        <div class="brand-mark">
-          <svg width="18" height="18" viewBox="0 0 14 14" fill="none">
-            <circle cx="7" cy="7" r="2.8" fill="var(--accent)"/>
-            <path d="M7 1v1.8M7 11.2V13M1 7h1.8M11.2 7H13M2.8 2.8l1.27 1.27M9.93 9.93l1.27 1.27M2.8 11.2l1.27-1.27M9.93 4.07l1.27-1.27"
-              stroke="var(--accent)" stroke-width="1.1" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <span class="brand-name">SINELOG</span>
-      </button>
-
-      <!-- Nav links (desktop) -->
-      <div class="nav-links hide-mobile">
-        <button class="nav-link" onclick="SL.Router.navigate('home')">Discover</button>
-        <button class="nav-link" onclick="SL.Router.navigate('feed')">Feed</button>
-        <button class="nav-link" onclick="SL.Router.navigate('search-page')">Browse</button>
-      </div>
+ 
+       <!-- Logo -->
+       <button class="brand-button" onclick="SL.Router.navigate('home')" aria-label="Go to SineLog home">
+         <div class="brand-mark">
+           <!-- REPLACE THE SRC BELOW WITH YOUR OWN IMAGE PATH (e.g. assets/logo.png) -->
+           <img src="assets/logo.png" alt="SineLog Logo" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />
+         </div>
+         <span class="brand-name">SINELOG</span>
+       </button>
+ 
+       <!-- Nav links (desktop) -->
+       <div class="nav-links hide-mobile">
+         <button class="nav-link ${currentRoute === 'home' ? 'active' : ''}" onclick="SL.Router.navigate('home')">Discover</button>
+         <button class="nav-link ${currentRoute === 'feed' ? 'active' : ''}" onclick="SL.Router.navigate('feed')">Feed</button>
+         <button class="nav-link ${currentRoute === 'search-page' ? 'active' : ''}" onclick="SL.Router.navigate('search-page')">Browse</button>
+       </div>
 
       <!-- Spacer -->
       <div style="flex:1"></div>
@@ -52,9 +51,9 @@ SL.Nav = (() => {
           <button class="btn btn-icon hide-mobile" title="My Profile"
             onclick="SL.Router.navigate('profile',{userId:'${user.id}'})">
             ${user.user_metadata?.avatar_url
-              ? `<img src="${user.user_metadata.avatar_url}" class="avatar" style="width:28px;height:28px" />`
-              : `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`
-            }
+          ? `<img src="${user.user_metadata.avatar_url}" class="avatar" style="width:28px;height:28px" />`
+          : `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`
+        }
           </button>
           <button class="btn btn-ghost btn-sm hide-mobile" id="nav-signout">Sign out</button>
           <button class="btn btn-icon hide-desktop" onclick="SL.Router.navigate('profile',{userId:'${user.id}'})">
@@ -145,7 +144,7 @@ SL.Nav = (() => {
           <div style="padding:9px 14px 6px;font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--mist);background:var(--surface-2)">Films</div>
           ${movies.map(m => `
             <div class="search-item" data-type="movie" data-id="${m.id}">
-              <img src="${SL.img.poster(m.poster_path,'w92')}" alt=""
+              <img src="${SL.img.poster(m.poster_path, 'w92')}" alt=""
                 style="width:36px;aspect-ratio:2/3;object-fit:cover;border-radius:6px;flex-shrink:0;border:1px solid var(--border)" />
               <div style="min-width:0">
                 <p style="font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">

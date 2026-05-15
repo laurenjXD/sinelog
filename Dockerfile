@@ -26,6 +26,7 @@ COPY nav.js          ./
 COPY modal.js        ./
 COPY manifest.json   ./
 COPY ui/             ./ui/
+COPY assets/         ./assets/
 
 # Verify critical files exist (fails build if missing)
 RUN test -f index.html  || (echo "MISSING: index.html"  && exit 1) && \
@@ -57,6 +58,10 @@ RUN addgroup -g 1001 -S appgroup && \
       /usr/share/nginx/html \
       /etc/nginx/conf.d
 
+# Copy entrypoint (generates env-config.js from K8s Secret env vars at startup)
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
 USER appuser
 
 EXPOSE 8080
@@ -64,4 +69,4 @@ EXPOSE 8080
 HEALTHCHECK --interval=15s --timeout=3s --start-period=5s --retries=3 \
   CMD wget --quiet --tries=1 --spider http://localhost:8080/ || exit 1
 
-CMD ["nginx", "-g", "daemon off;"]
+ENTRYPOINT ["/docker-entrypoint.sh"]

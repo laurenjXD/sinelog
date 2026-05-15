@@ -40,6 +40,11 @@ spec:
               containerPort: 8080
               protocol: TCP
 
+          # ── Secret env vars (TMDB_KEY, SUPABASE_URL, SUPABASE_ANON) ──
+          envFrom:
+            - secretRef:
+                name: sinelog-secrets
+
           # ── Nginx config from ConfigMap ────────────────────────
           volumeMounts:
             - name: nginx-config
