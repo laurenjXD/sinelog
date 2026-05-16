@@ -8,7 +8,6 @@ SL.Nav = (() => {
     const authed = SL.Auth.isAuthed();
     const currentRoute = SL.Router.current();
 
-    // 1. Desktop Top Navbar
     navbar.innerHTML = `
     <div class="nav-shell">
        <button class="brand-button" onclick="SL.Router.navigate('home')" aria-label="Go to SineLog home">
@@ -53,41 +52,80 @@ SL.Nav = (() => {
           <button class="btn btn-ghost btn-sm" onclick="SL.AuthPanel.open('login')">Sign in</button>
           <button class="btn btn-primary btn-sm hide-mobile" onclick="SL.AuthPanel.open('signup')">Join free</button>
         `}
+        
+        <!-- Mobile Menu Toggle -->
+        <button class="menu-toggle-btn" id="mobile-menu-toggle" aria-label="Toggle menu">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M4 6h16M4 12h16M4 18h16"/>
+          </svg>
+        </button>
       </div>
     </div>
     `;
 
-    // 2. Mobile Bottom Navbar
-    const mobileNav = document.getElementById('mobile-nav');
-    if (mobileNav) {
-      mobileNav.innerHTML = `
-        <button class="mobile-nav-item ${currentRoute === 'home' ? 'active' : ''}" onclick="SL.Router.navigate('home')">
+    // Populate Mobile Dropdown
+    const dropdown = document.getElementById('mobile-menu-dropdown');
+    if (dropdown) {
+      dropdown.innerHTML = `
+        <button class="mobile-dropdown-item ${currentRoute === 'home' ? 'active' : ''}" onclick="SL.Nav.closeMobileMenu(); SL.Router.navigate('home')">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
           <span>Discover</span>
         </button>
-        <button class="mobile-nav-item ${currentRoute === 'feed' ? 'active' : ''}" onclick="SL.Router.navigate('feed')">
+        <button class="mobile-dropdown-item ${currentRoute === 'feed' ? 'active' : ''}" onclick="SL.Nav.closeMobileMenu(); SL.Router.navigate('feed')">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l4 4v10a2 2 0 01-2 2z"/><path d="M14 2v4h4"/><path d="M7 8h10"/><path d="M7 12h10"/><path d="M7 16h6"/></svg>
           <span>Feed</span>
         </button>
-        <button class="mobile-nav-item ${currentRoute === 'search-page' ? 'active' : ''}" onclick="SL.Router.navigate('search-page')">
+        <button class="mobile-dropdown-item ${currentRoute === 'search-page' ? 'active' : ''}" onclick="SL.Nav.closeMobileMenu(); SL.Router.navigate('search-page')">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
           <span>Browse</span>
         </button>
-        <button class="mobile-nav-item ${currentRoute === 'profile' ? 'active' : ''}" 
-          onclick="${authed ? `SL.Router.navigate('profile',{userId:'${user.id}'})` : `SL.AuthPanel.open('login')`}">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-          <span>${authed ? 'Profile' : 'Sign In'}</span>
-        </button>
+        ${authed ? `
+          <button class="mobile-dropdown-item ${currentRoute === 'profile' ? 'active' : ''}" onclick="SL.Nav.closeMobileMenu(); SL.Router.navigate('profile',{userId:'${user.id}'})">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            <span>My Profile</span>
+          </button>
+          <button class="mobile-dropdown-item" id="mobile-nav-signout">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            <span>Sign out</span>
+          </button>
+        ` : `
+          <button class="mobile-dropdown-item" onclick="SL.Nav.closeMobileMenu(); SL.AuthPanel.open('login')">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            <span>Sign In</span>
+          </button>
+        `}
       `;
     }
 
-    document.getElementById('nav-signout')?.addEventListener('click', async () => {
+    // Toggle dropdown
+    document.getElementById('mobile-menu-toggle')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dropdown?.classList.toggle('open');
+    });
+
+    // Close on sign out
+    const handleSignOut = async () => {
       await SL.Auth.signOut();
+      SL.Nav.closeMobileMenu();
       SL.Router.navigate('home');
       SL.toast('Signed out. See you next time');
+    };
+
+    document.getElementById('nav-signout')?.addEventListener('click', handleSignOut);
+    document.getElementById('mobile-nav-signout')?.addEventListener('click', handleSignOut);
+
+    // Close when clicking outside
+    document.addEventListener('click', (e) => {
+      if (dropdown?.classList.contains('open') && !dropdown.contains(e.target) && !e.target.closest('#mobile-menu-toggle')) {
+        SL.Nav.closeMobileMenu();
+      }
     });
 
     initSearch();
+  }
+
+  function closeMobileMenu() {
+    document.getElementById('mobile-menu-dropdown')?.classList.remove('open');
   }
 
   function initSearch() {
