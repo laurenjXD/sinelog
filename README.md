@@ -29,46 +29,31 @@ SineLog is a premium, high-performance film diary and social discovery applicati
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: Vanilla JavaScript (ES6+), HTML5, CSS3 (Glassmorphism / Design System)
-- **Backend-as-a-Service**: [Supabase](https://supabase.com/) (Postgres, Auth, RLS)
-- **API**: [The Movie Database (TMDB)](https://www.themoviedb.org/documentation/api)
-- **AI**: Puter.js for intelligent taste analysis
-- **DevOps**: Docker, Nginx, Kubernetes (Docker Desktop / K8s)
+- HTML, CSS, and vanilla JavaScript
+- Supabase Auth and Postgres
+- TMDB API
+- Puter AI script for optional taste analysis
+- Docker and Kubernetes files for deployment experiments
 
----
+## Project Structure
 
-## 🏗️ Project Architecture
+- `index.html` loads the SPA shell and scripts.
+- `app.js` contains configuration, router utilities, shared constants, formatting, and toast helpers.
+- `tmdb.js` wraps TMDB API calls.
+- `store.js` wraps Supabase database operations.
+- `modal.js` renders the movie detail and logging modal.
+- `nav.js` renders navigation and global search.
+- `ui/` contains page-level views: home, feed, profile, and browse.
+- `styles.css` contains the design system, responsive styles, modal styles, and reusable UI classes.
+- `supabase-schema.sql` contains the full schema for a new Supabase project.
 
-```
-sinelog/
-├── assets/                  # Fonts and static branding
-├── k8s/                     # Kubernetes Manifests (Deployment, Service, etc.)
-├── ui/                      # Modular view components (home, profile, feed)
-├── app.js                   # Application shell & Router configuration
-├── auth.js                  # Supabase Authentication logic
-├── store.js                 # Supabase Database & Store wrapper
-├── tmdb.js                  # TMDB API Integration
-├── modal.js                 # Global Movie Details & Logging Modal
-├── nav.js                   # Premium Navigation & Search logic
-├── styles.css               # Core Design System & UI Tokens
-├── Dockerfile               # High-performance Nginx multi-stage build
-└── DEPLOYMENT.md            # Comprehensive Kubernetes Guide
-```
+## Setup
 
----
+1. Create a Supabase project.
+2. Run `supabase-schema.sql` in the Supabase SQL editor for a fresh database.
+3. Create a TMDB API key.
+4. Add your keys in `app.js`:
 
-## 🚀 Getting Started
-
-### 1. Database Setup (Supabase)
-- Create a new project on [Supabase](https://supabase.com/).
-- Execute `supabase-schema.sql` in the SQL Editor to initialize the core tables.
-- **Important**: Apply the recent migrations in order:
-  1. `supabase-migration-rewatch.sql` (Rewatch tracking)
-  2. `supabase-migration-half-star-ratings.sql` (Half-star support)
-  3. `supabase-migration-security-invoker-views.sql` (RLS Security)
-
-### 2. Configuration
-Add your API keys to `SL.CONFIG` in `app.js`:
 ```js
 SL.CONFIG = {
   TMDB_KEY: 'your_tmdb_v3_api_key',
@@ -77,34 +62,32 @@ SL.CONFIG = {
 };
 ```
 
-### 3. Local Development
-Simply serve the root directory using any static web server (e.g., Live Server, `npx serve`).
+5. Open `index.html` in a browser, or serve the folder with a static web server.
 
----
+## Demo Checklist
 
-## 🐳 Production Deployment
+Use this checklist before presenting:
 
-### Docker
-The application is optimized for containerization using a multi-stage Nginx build:
-```bash
-docker build -t sinelog:latest .
-docker run -p 8080:8080 sinelog:latest
-```
+- App loads without console syntax errors.
+- Home page displays trending rows and hero film.
+- Search finds a movie and opens the movie modal.
+- A user can sign up or sign in.
+- A signed-in user can log a film with rating, review, and watched date.
+- Updating an existing log preserves saved fields.
+- Watchlist add/remove shows a toast.
+- Feed loads recent logs.
+- Profile shows logged films, reviews, liked films, and watchlist.
+- Layout remains usable on desktop and mobile widths.
 
-### Kubernetes
-For orchestration, self-healing, and scaling, refer to the [**Kubernetes Deployment Guide (DEPLOYMENT.md)**](file:///d:/downloads%20gyatt/sinelog-complete/sinelog/DEPLOYMENT.md).
+## Known Limitations
 
-**Quick Deploy:**
-```powershell
-kubectl apply -f k8s/namespace.yaml
-kubectl apply -f k8s/
-```
+- AI Taste Match depends on the locally written script available.
+- The app uses a simple vanilla JavaScript router, so page URLs do not represent deep links.
 
----
+## Rubric Alignment
 
-## 📜 Rubric & Implementation Details
-
-- **JavaScript Logic**: Modular namespace pattern (`SL.*`) ensuring no global namespace pollution.
-- **Security**: Row Level Security (RLS) and `security_invoker` views for safe data access.
-- **UX Excellence**: Empty states, error boundaries, and accessibility-aware components.
-- **Orchestration**: Production-ready K8s setup with NetworkPolicies, PDBs, and HPAs.
+- Core functionality: browsing, auth, logging, watchlist, feed, profile, and taste matching.
+- JavaScript logic: modular namespaces for router, store, TMDB API, modal, auth, nav, and page views.
+- UI: responsive modal, profile tabs, reusable buttons, and poster grids.
+- UX: loaders, empty states, toasts, disabled states during saves, auth prompts, and clear setup errors.
+- Code quality: separated files by responsibility, named helpers, schema/migration files, and this README.
