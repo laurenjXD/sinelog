@@ -114,19 +114,20 @@ SL.Nav = (() => {
     document.getElementById('nav-signout')?.addEventListener('click', handleSignOut);
     document.getElementById('mobile-nav-signout')?.addEventListener('click', handleSignOut);
 
-    // Close when clicking outside
-    document.addEventListener('click', (e) => {
-      if (dropdown?.classList.contains('open') && !dropdown.contains(e.target) && !e.target.closest('#mobile-menu-toggle')) {
-        SL.Nav.closeMobileMenu();
-      }
-    });
-
     initSearch();
   }
 
   function closeMobileMenu() {
     document.getElementById('mobile-menu-dropdown')?.classList.remove('open');
   }
+
+  // Handle global clicks (outside menu)
+  document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('mobile-menu-dropdown');
+    if (dropdown?.classList.contains('open') && !dropdown.contains(e.target) && !e.target.closest('#mobile-menu-toggle')) {
+      closeMobileMenu();
+    }
+  });
 
   function initSearch() {
     const input = document.getElementById('nav-search');
@@ -224,5 +225,5 @@ SL.Nav = (() => {
     }
   }
 
-  return { update };
+  return { update, closeMobileMenu };
 })();
