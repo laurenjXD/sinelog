@@ -6,32 +6,26 @@ SL.Nav = (() => {
   function update() {
     const user = SL.Auth.user();
     const authed = SL.Auth.isAuthed();
-
     const currentRoute = SL.Router.current();
 
+    // 1. Desktop Top Navbar
     navbar.innerHTML = `
     <div class="nav-shell">
- 
-       <!-- Logo -->
        <button class="brand-button" onclick="SL.Router.navigate('home')" aria-label="Go to SineLog home">
          <div class="brand-mark">
-           <!-- REPLACE THE SRC BELOW WITH YOUR OWN IMAGE PATH (e.g. assets/logo.png) -->
            <img src="assets/logo.png" alt="SineLog Logo" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;" />
          </div>
          <span class="brand-name">SINELOG</span>
        </button>
  
-       <!-- Nav links (desktop) -->
        <div class="nav-links hide-mobile">
          <button class="nav-link ${currentRoute === 'home' ? 'active' : ''}" onclick="SL.Router.navigate('home')">Discover</button>
          <button class="nav-link ${currentRoute === 'feed' ? 'active' : ''}" onclick="SL.Router.navigate('feed')">Feed</button>
          <button class="nav-link ${currentRoute === 'search-page' ? 'active' : ''}" onclick="SL.Router.navigate('search-page')">Browse</button>
        </div>
 
-      <!-- Spacer -->
       <div style="flex:1"></div>
 
-      <!-- Search -->
       <div class="nav-search-box">
         <div style="display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border-strong);border-radius:10px;padding:8px 12px;transition:border-color 0.2s,box-shadow 0.2s" id="search-wrap">
           <svg width="14" height="14" fill="none" stroke="var(--accent)" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0">
@@ -45,7 +39,6 @@ SL.Nav = (() => {
         <div id="search-results" class="glass-card" style="display:none;position:absolute;top:calc(100% + 8px);left:0;right:0;z-index:900;border-radius:12px;overflow:hidden;max-height:420px;overflow-y:auto;box-shadow:0 12px 48px rgba(0,0,0,0.12)"></div>
       </div>
 
-      <!-- Auth actions -->
       <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
         ${authed ? `
           <button class="btn btn-icon hide-mobile" title="My Profile"
@@ -56,9 +49,6 @@ SL.Nav = (() => {
         }
           </button>
           <button class="btn btn-ghost btn-sm hide-mobile" id="nav-signout">Sign out</button>
-          <button class="btn btn-icon hide-desktop" onclick="SL.Router.navigate('profile',{userId:'${user.id}'})">
-            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-          </button>
         ` : `
           <button class="btn btn-ghost btn-sm" onclick="SL.AuthPanel.open('login')">Sign in</button>
           <button class="btn btn-primary btn-sm hide-mobile" onclick="SL.AuthPanel.open('signup')">Join free</button>
@@ -66,6 +56,30 @@ SL.Nav = (() => {
       </div>
     </div>
     `;
+
+    // 2. Mobile Bottom Navbar
+    const mobileNav = document.getElementById('mobile-nav');
+    if (mobileNav) {
+      mobileNav.innerHTML = `
+        <button class="mobile-nav-item ${currentRoute === 'home' ? 'active' : ''}" onclick="SL.Router.navigate('home')">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+          <span>Discover</span>
+        </button>
+        <button class="mobile-nav-item ${currentRoute === 'feed' ? 'active' : ''}" onclick="SL.Router.navigate('feed')">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l4 4v10a2 2 0 01-2 2z"/><path d="M14 2v4h4"/><path d="M7 8h10"/><path d="M7 12h10"/><path d="M7 16h6"/></svg>
+          <span>Feed</span>
+        </button>
+        <button class="mobile-nav-item ${currentRoute === 'search-page' ? 'active' : ''}" onclick="SL.Router.navigate('search-page')">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <span>Browse</span>
+        </button>
+        <button class="mobile-nav-item ${currentRoute === 'profile' ? 'active' : ''}" 
+          onclick="${authed ? `SL.Router.navigate('profile',{userId:'${user.id}'})` : `SL.AuthPanel.open('login')`}">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+          <span>${authed ? 'Profile' : 'Sign In'}</span>
+        </button>
+      `;
+    }
 
     document.getElementById('nav-signout')?.addEventListener('click', async () => {
       await SL.Auth.signOut();

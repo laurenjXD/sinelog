@@ -1893,6 +1893,94 @@ textarea.input {
   background: rgba(255, 255, 255, 0.10);
 }
 
+/* ── Responsive Utils ───────────────────────────────────────────── */
+.hide-mobile {
+  display: flex !important;
+}
+
+.hide-desktop {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .hide-mobile {
+    display: none !important;
+  }
+
+  .hide-desktop {
+    display: flex !important;
+  }
+}
+
+/* ── Mobile Bottom Nav ──────────────────────────────────────────── */
+#mobile-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: rgba(245, 245, 248, 0.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-top: 1px solid var(--border);
+  display: none;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 10px;
+  z-index: 800;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="dark"] #mobile-nav {
+  background: rgba(13, 13, 20, 0.85);
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+@media (max-width: 768px) {
+  #mobile-nav {
+    display: flex;
+  }
+
+  /* Add padding to app container so bottom nav doesn't cover content */
+  #app {
+    padding-bottom: 80px;
+  }
+}
+
+.mobile-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: var(--mist);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 8px;
+  transition: all 0.2s ease;
+  flex: 1;
+  cursor: pointer;
+}
+
+.mobile-nav-item.active {
+  color: var(--accent);
+}
+
+.mobile-nav-item svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2.2;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.mobile-nav-item.active svg {
+  transform: translateY(-2px);
+}
+
 /* ── Hero bottom fade (theme-aware) ─────────────────────────────── */
 .hero-bottom-fade {
   position: absolute;
