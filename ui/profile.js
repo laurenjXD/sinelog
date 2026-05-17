@@ -179,19 +179,32 @@ SL.Router.register('profile', async (container, params) => {
   }
 
   function scoreLabel(score) {
-    if (score >= 85) return 'Excellent match';
-    if (score >= 70) return 'Strong match';
-    if (score >= 55) return 'Good overlap';
-    if (score >= 35) return 'Some overlap';
-    return 'Different taste lanes';
+    if (score >= 90) return 'Soulmates';
+    if (score >= 80) return 'Excellent match';
+    if (score >= 65) return 'Strong match';
+    if (score >= 50) return 'Good overlap';
+    if (score >= 30) return 'Some overlap';
+    if (score >= 15) return 'Different taste lanes';
+    return 'Polar opposites';
   }
 
   function sharedLogScore(a, b) {
-    let score = 60;
-    if (a.rating && b.rating) score = 100 - Math.abs(a.rating - b.rating) * 20;
-    if (a.liked === b.liked) score += 8;
-    if (a.liked !== b.liked && (a.liked || b.liked)) score -= 12;
-    return Math.max(0, Math.min(100, score));
+    let score = 50;
+    if (a.rating && b.rating) {
+      const diff = Math.abs(a.rating - b.rating);
+      score = 100 - (diff * diff * 5 + diff * 12);
+    } else if (a.rating || b.rating) {
+      score = 60;
+    }
+    
+    if (a.liked && b.liked) score += 15;
+    else if (!a.liked && !b.liked) score += 4;
+    else if (a.liked !== b.liked && (a.liked || b.liked)) score -= 15;
+
+    if (a.is_rewatch && b.is_rewatch) score += 8;
+    else if (a.is_rewatch !== b.is_rewatch && (a.is_rewatch || b.is_rewatch)) score -= 4;
+    
+    return Math.max(0, Math.min(100, Math.round(score)));
   }
 
   function renderCompatibilityResult(myLogs, theirLogs, myWatchlist, theirWatchlist) {

@@ -348,30 +348,72 @@ SL.Modal = (() => {
     }
   }
 
-  function localTasteMatch(movie, credits, logs, reason = '') {
+  function localTasteMatch(movie, credits, logs, similarMovies = [], reason = '') {
     const rated = logs.filter(log => log.rating);
     const avgRating = rated.length
       ? rated.reduce((sum, log) => sum + Number(log.rating || 0), 0) / rated.length
-      : 0;
+      : 3;
+      
+    let score = 50;
     const likedCount = logs.filter(log => log.liked).length;
-    const reviewCount = logs.filter(log => log.review).length;
-    const director = credits.crew?.find(c => c.job === 'Director')?.name || 'the director';
+    let reasons = [];
+
+    // Analyze Similar Movies match
+    if (similarMovies.length) {
+      const similarIds = new Set(similarMovies.map(m => m.id));
+      const loggedSimilar = logs.filter(l => similarIds.has(l.tmdb_id));
+      
+      if (loggedSimilar.length > 0) {
+        let simScore = 0;
+        loggedSimilar.forEach(l => {
+          if (l.liked) simScore += 15;
+          if (l.rating) {
+            simScore += (l.rating - 3) * 8; 
+          }
+          if (!l.liked && (!l.rating || l.rating <= 2.5)) {
+            simScore -= 10;
+          }
+        });
+        
+        const similarImpact = simScore / loggedSimilar.length;
+        score += similarImpact * 1.5;
+        
+        const sentiment = similarImpact > 5 ? 'enjoyed' : similarImpact < -5 ? 'disliked' : 'had mixed feelings about';
+        reasons.push(`You've logged ${loggedSimilar.length} similar film${loggedSimilar.length === 1 ? '' : 's'} and generally ${sentiment} them.`);
+      } else {
+         reasons.push(`You haven't logged many films similar to this one, so we are relying on broader taste signals.`);
+      }
+    }
+
+    const director = credits.crew?.find(c => c.job === 'Director')?.name;
     const genres = (movie.genres || []).map(g => g.name);
     const genreText = genres.length ? genres.slice(0, 2).join(' and ') : 'this kind of film';
-    const score = Math.max(35, Math.min(92, Math.round(
-      48 +
-      (avgRating - 3) * 13 +
-      (likedCount / Math.max(logs.length, 1)) * 20 +
-      Math.min(reviewCount, 8)
-    )));
+
+    const movieRating = movie.vote_average || 5; 
+    const differenceFromGlobal = Math.abs(avgRating - (movieRating / 2));
+    
+    // Scale score by how much they agree with consensus for this type of movie
+    if (differenceFromGlobal < 1) {
+       score += 8; 
+       reasons.push(`Your rating history aligns well with how ${movie.title} is generally received by audiences.`);
+    } else {
+       score -= differenceFromGlobal * 6; 
+       reasons.push(`Your taste tends to diverge from general audience consensus, so this match might be unpredictable.`);
+    }
+    
+    if (likedCount > 0) reasons.push(`We factored in your ${likedCount} liked film${likedCount === 1 ? '' : 's'} as strong positive taste signals.`);
+    if (director) reasons.push(`${director}'s involvement was cross-referenced with your broader viewing patterns.`);
+    
+    // Shift score based on general positivity
+    score += (avgRating - 3) * 4;
+
+    score = Math.max(1, Math.min(99, Math.round(score)));
 
     return `Taste Match: ${score}%
-Why it fits: Your diary averages ${avgRating ? avgRating.toFixed(1) : 'no rated films'}/5 across ${logs.length} logged film${logs.length === 1 ? '' : 's'}. ${movie.title} has ${genreText} signals, so this estimate uses your ratings, likes, and review activity.
+Why it fits: ${movie.title} has ${genreText} signals, and this estimate is drawn from your ratings, likes, and watch history.
 Reasons:
-- You have ${likedCount} liked film${likedCount === 1 ? '' : 's'}, which suggests stronger positive taste signals than ratings alone.
-- ${reviewCount ? `Your written reviews give the matcher extra context from ${reviewCount} film${reviewCount === 1 ? '' : 's'}.` : 'Adding written reviews will make future taste matches more specific.'}
-- ${director !== 'the director' ? `${director}'s film is compared against your existing diary patterns.` : 'The match is based on your logged history and this movie metadata.'}
-Possible mismatch: This estimate uses your local diary signals only${reason ? ` (${reason})` : ''}.`;
+- ${reasons.join('\n- ')}
+${reason ? `\nNote: ${reason}` : ''}`;
   }
 
   async function generateTasteMatch(movie, credits) {
@@ -391,7 +433,7 @@ Possible mismatch: This estimate uses your local diary signals only${reason ? ` 
 
     try {
       if (!SL.Auth.isAuthed()) {
-        const genericText = localTasteMatch(movie, credits, [], 'sign in and log films for a personal match');
+        const genericText = localTasteMatch(movie, credits, [], [], 'sign in and log films for a personal match');
         result.innerHTML = `
           <div style="font-size:13px;color:var(--ghost);line-height:1.75;white-space:pre-wrap">${SL.esc(genericText)}</div>
           <button class="btn btn-primary btn-sm" style="margin-top:14px" onclick="SL.AuthPanel.open()">Sign in for personal match</button>
@@ -400,8 +442,14 @@ Possible mismatch: This estimate uses your local diary signals only${reason ? ` 
       }
 
       let logs = [];
+      let similar = [];
       try {
-        logs = await SL.Store.logs.getForUser(SL.Auth.uid(), 0, 30);
+        const [logsData, similarData] = await Promise.all([
+          SL.Store.logs.getForUser(SL.Auth.uid(), 0, 100),
+          SL.TMDB.similar(movie.id).catch(() => ({ results: [] }))
+        ]);
+        logs = logsData;
+        similar = similarData.results || [];
       } catch (logError) {
         console.warn('Could not load film diary for taste match:', logError);
         result.innerHTML = `
@@ -421,7 +469,7 @@ Possible mismatch: This estimate uses your local diary signals only${reason ? ` 
         return;
       }
 
-      const matchText = localTasteMatch(movie, credits, logs);
+      const matchText = localTasteMatch(movie, credits, logs, similar);
       result.innerHTML = `
         <div style="font-size:13px;color:var(--ghost);line-height:1.75;white-space:pre-wrap">${SL.esc(matchText)}</div>
       `;
