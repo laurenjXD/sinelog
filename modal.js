@@ -494,8 +494,30 @@ Do NOT use markdown in your response. Instead, format your response exactly with
 <div><strong>Reasons:</strong><br/>- [Reason 1 based on my history]<br/>- [Reason 2 based on my history]</div>`;
 
         const aiResponse = await puter.ai.chat(prompt);
-        aiResponseText = typeof aiResponse === 'string' ? aiResponse : (aiResponse?.message?.content || aiResponse?.text || '');
-        if (!aiResponseText) throw new Error("Empty AI response");
+        console.log("Puter AI Response:", aiResponse); // For debugging
+        
+        // Robust extraction
+        if (typeof aiResponse === 'string') {
+          aiResponseText = aiResponse;
+        } else if (aiResponse?.message?.content) {
+          const content = aiResponse.message.content;
+          if (typeof content === 'string') {
+            aiResponseText = content;
+          } else if (Array.isArray(content)) {
+            // Some AI models return content as an array of blocks
+            aiResponseText = content.map(block => block.text || JSON.stringify(block)).join('\\n');
+          } else {
+            aiResponseText = JSON.stringify(content);
+          }
+        } else if (aiResponse?.text) {
+          aiResponseText = aiResponse.text;
+        } else if (aiResponse?.toString && typeof aiResponse.toString === 'function' && aiResponse.toString() !== '[object Object]') {
+          aiResponseText = aiResponse.toString();
+        } else {
+          aiResponseText = JSON.stringify(aiResponse);
+        }
+
+        if (!aiResponseText || aiResponseText === '[object Object]') throw new Error("Empty or invalid AI response");
       } catch (aiError) {
         console.warn("Puter AI failed, falling back to local:", aiError);
         aiResponseText = localTasteMatch(movie, credits, logs, similar, "Puter AI unavailable. Showing estimated local match.");
