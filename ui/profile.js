@@ -400,7 +400,48 @@ SL.Router.register('profile', async (container, params) => {
         SL.Store.watchlist.getForUser(SL.Auth.uid()),
         SL.Store.watchlist.getForUser(targetId),
       ]);
-      result.innerHTML = renderCompatibilityResult(myLogs, theirLogs, myWatchlist, theirWatchlist);
+      
+      let aiResponseText = "";
+      try {
+        const prompt = `You are an expert film critic AI for the SineLog app.
+I am User A, visiting User B's profile.
+
+My recently watched/liked movies:
+${myLogs.slice(0, 15).map(l => `- "${l.movie_title}": ${l.rating || 0}/5 stars ${l.liked ? '(Liked)' : ''}`).join('\n')}
+
+Their recently watched/liked movies:
+${theirLogs.slice(0, 15).map(l => `- "${l.movie_title}": ${l.rating || 0}/5 stars ${l.liked ? '(Liked)' : ''}`).join('\n')}
+
+Calculate our Cinematic Compatibility Score (0-100%) based on genres, themes, and ratings. 
+Do NOT use markdown. Format your response exactly like this using HTML tags:
+<div style="font-size:24px;font-weight:700;color:var(--accent);margin-bottom:8px">Compatibility: [Score]%</div>
+<div style="margin-bottom:8px"><strong>Verdict:</strong> [1 sentence summary about our taste overlap]</div>
+<div><strong>Details:</strong><br/>- [Reason 1 based on our shared or differing tastes]<br/>- [Reason 2 based on our shared or differing tastes]</div>`;
+
+        const aiResponse = await puter.ai.chat(prompt);
+        
+        // Robust extraction
+        if (typeof aiResponse === 'string') {
+          aiResponseText = aiResponse;
+        } else if (aiResponse?.message?.content) {
+          const content = aiResponse.message.content;
+          if (typeof content === 'string') aiResponseText = content;
+          else if (Array.isArray(content)) aiResponseText = content.map(block => block.text || JSON.stringify(block)).join('\\n');
+          else aiResponseText = JSON.stringify(content);
+        } else if (aiResponse?.text) {
+          aiResponseText = aiResponse.text;
+        } else if (aiResponse?.toString && typeof aiResponse.toString === 'function' && aiResponse.toString() !== '[object Object]') {
+          aiResponseText = aiResponse.toString();
+        } else {
+          aiResponseText = JSON.stringify(aiResponse);
+        }
+
+        if (!aiResponseText || aiResponseText === '[object Object]') throw new Error("Empty or invalid AI response");
+        result.innerHTML = `<div style="font-size:13px;color:var(--text);line-height:1.6">${aiResponseText}</div>`;
+      } catch (aiErr) {
+        console.warn("Puter AI failed, falling back to local compatibility:", aiErr);
+        result.innerHTML = renderCompatibilityResult(myLogs, theirLogs, myWatchlist, theirWatchlist);
+      }
     } catch(e) {
       console.error('Compatibility error:', e);
       result.innerHTML = `
