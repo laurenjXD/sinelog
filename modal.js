@@ -469,9 +469,41 @@ ${reason ? `\nNote: ${reason}` : ''}`;
         return;
       }
 
-      const matchText = localTasteMatch(movie, credits, logs, similar);
       result.innerHTML = `
-        <div style="font-size:13px;color:var(--ghost);line-height:1.75;white-space:pre-wrap">${SL.esc(matchText)}</div>
+        <div style="display:flex;align-items:center;gap:10px;color:var(--mist);font-size:13px">
+          <div class="spinner spinner-sm"></div>
+          AI is analyzing your taste profile...
+        </div>
+      `;
+
+      let aiResponseText = "";
+      try {
+        const prompt = `You are an expert film critic AI for the SineLog app.
+I am considering watching the movie "${movie.title}".
+Synopsis: ${movie.overview}
+Genres: ${(movie.genres || []).map(g => g.name).join(', ')}
+
+Here are some movies I've recently watched, my ratings (out of 5 stars), and my reviews:
+${logs.slice(0, 15).map(l => `- "${l.movie_title}": ${l.rating}/5 stars ${l.liked ? '(Liked)' : ''}. ${l.review ? 'Review: ' + l.review : ''}`).join('\n')}
+
+Based on my exact watch history above, predict how much I will like "${movie.title}".
+If there is not much history, do your best based on the genres and synopsis.
+Do NOT use markdown in your response. Instead, format your response exactly with these HTML tags:
+<div style="font-size:24px;font-weight:700;color:var(--accent);margin-bottom:8px">Taste Match: [Your Score 1-100]%</div>
+<div style="margin-bottom:8px"><strong>Why it fits:</strong> [1 sentence summary]</div>
+<div><strong>Reasons:</strong><br/>- [Reason 1 based on my history]<br/>- [Reason 2 based on my history]</div>`;
+
+        const aiResponse = await puter.ai.chat(prompt);
+        aiResponseText = typeof aiResponse === 'string' ? aiResponse : (aiResponse?.message?.content || aiResponse?.text || '');
+        if (!aiResponseText) throw new Error("Empty AI response");
+      } catch (aiError) {
+        console.warn("Puter AI failed, falling back to local:", aiError);
+        aiResponseText = localTasteMatch(movie, credits, logs, similar, "Puter AI unavailable. Showing estimated local match.");
+        aiResponseText = `<div style="white-space:pre-wrap;color:var(--ghost)">${SL.esc(aiResponseText)}</div>`;
+      }
+
+      result.innerHTML = `
+        <div style="font-size:13px;color:var(--text);line-height:1.6">${aiResponseText}</div>
       `;
     } catch(e) {
       console.error('Taste match error:', e);
