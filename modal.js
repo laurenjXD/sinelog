@@ -180,7 +180,13 @@ SL.Modal = (() => {
 
             <!-- Review -->
             <textarea id="review-input" class="input" placeholder="Write your thoughts on this film…" rows="3"
-              style="margin-bottom:14px">${SL.esc(myLog?.review || '')}</textarea>
+              style="margin-bottom:8px">${SL.esc(myLog?.review || '')}</textarea>
+              
+            <!-- Spoilers toggle -->
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:14px">
+              <input type="checkbox" id="spoilers-toggle" style="accent-color:var(--accent);width:14px;height:14px;cursor:pointer" ${myLog?.has_spoilers ? 'checked' : ''} />
+              <label for="spoilers-toggle" style="font-size:12px;color:var(--mist);cursor:pointer;user-select:none">Contains spoilers</label>
+            </div>
 
             <!-- Date -->
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
@@ -304,6 +310,7 @@ SL.Modal = (() => {
               review: document.getElementById('review-input').value.trim(),
               liked: isLiked,
               rewatch: isRewatch,
+              hasSpoilers: document.getElementById('spoilers-toggle').checked,
               watchedOn: document.getElementById('watched-date').value,
             }
           );
@@ -568,7 +575,10 @@ Do NOT use markdown in your response. Instead, format your response exactly with
               ${r.is_rewatch ? `<span class="rewatch-badge">Rewatch</span>` : ''}
               <span style="font-size:11px;color:var(--mist)">${SL.fmt.date(r.created_at)}</span>
             </div>
-            <p style="font-size:13px;color:var(--ghost);line-height:1.6">${SL.esc(r.review)}</p>
+            <div style="margin-top:6px">
+              ${r.has_spoilers ? `<span class="spoiler-warning" onclick="this.nextElementSibling.classList.toggle('revealed')">⚠️ Contains Spoilers — Click to reveal</span>` : ''}
+              <p style="font-size:13px;color:var(--ghost);line-height:1.6" class="${r.has_spoilers ? 'review-spoilers' : ''}" ${r.has_spoilers ? `onclick="this.classList.toggle('revealed')"` : ''}>${SL.esc(r.review)}</p>
+            </div>
             <button class="like-btn ${liked ? 'liked' : ''}" data-log="${r.id}" data-liked="${liked}"
               style="display:flex;align-items:center;gap:4px;margin-top:6px;font-size:11px;color:${liked ? '#e05555' : 'var(--mist)'};background:none;border:none;cursor:pointer;font-family:inherit">
               <svg width="12" height="12" fill="${liked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">

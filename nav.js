@@ -40,12 +40,9 @@ SL.Nav = (() => {
 
       <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
         ${authed ? `
-          <button class="btn btn-icon hide-mobile" title="My Profile"
-            onclick="SL.Router.navigate('profile',{userId:'${user.id}'})">
-            ${user.user_metadata?.avatar_url
-          ? `<img src="${user.user_metadata.avatar_url}" class="avatar" style="width:28px;height:28px" />`
-          : `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`
-        }
+          <button class="btn btn-icon hide-mobile" title="My Profile" onclick="SL.Router.navigate('profile',{userId:'${user.id}'})" style="position:relative;overflow:hidden">
+            <img class="nav-avatar" src="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:none;position:absolute;inset:0" />
+            <svg class="nav-avatar-fallback" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
           </button>
           <button class="btn btn-ghost hide-mobile" id="nav-signout" style="height:36px;padding:0 16px;">Sign out</button>
         ` : `
@@ -81,10 +78,10 @@ SL.Nav = (() => {
         </button>
         ${authed ? `
           <button class="mobile-dropdown-item ${currentRoute === 'profile' ? 'active' : ''}" onclick="SL.Nav.closeMobileMenu(); SL.Router.navigate('profile',{userId:'${user.id}'})">
-            ${user.user_metadata?.avatar_url
-              ? `<img src="${user.user_metadata.avatar_url}" style="width:24px;height:24px;border-radius:50%;object-fit:cover" />`
-              : `<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>`
-            }
+            <div style="position:relative;width:24px;height:24px;display:inline-block">
+              <img class="nav-avatar" src="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:none;position:absolute;inset:0" />
+              <svg class="nav-avatar-fallback" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:100%;height:100%"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+            </div>
             <span>My Profile</span>
           </button>
           <button class="mobile-dropdown-item" id="mobile-nav-signout">
@@ -118,6 +115,22 @@ SL.Nav = (() => {
     document.getElementById('mobile-nav-signout')?.addEventListener('click', handleSignOut);
 
     initSearch();
+
+    // Async fetch user profile for avatar
+    if (authed && window.SL?.Store?.profiles) {
+      SL.Store.profiles.myProfile().then(profile => {
+        if (profile?.avatar_url) {
+          const avatarUrl = SL.img.profile(profile.avatar_url, 'w92');
+          document.querySelectorAll('.nav-avatar').forEach(img => {
+            img.src = avatarUrl;
+            img.style.display = 'block';
+          });
+          document.querySelectorAll('.nav-avatar-fallback').forEach(svg => {
+            svg.style.display = 'none';
+          });
+        }
+      }).catch(e => console.warn('Failed to load nav avatar', e));
+    }
   }
 
   function closeMobileMenu() {

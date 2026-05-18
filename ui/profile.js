@@ -128,7 +128,10 @@ SL.Router.register('profile', async (container, params) => {
                 ${r.rating ? `<span style="font-size:13px;color:var(--accent)">${SL.ratingStars(r.rating)} ${SL.ratingText(r.rating)}</span>` : ''}
                 ${r.is_rewatch ? `<span class="rewatch-badge">Rewatch</span>` : ''}
               </div>
-              <p style="font-size:13px;color:var(--ghost);line-height:1.65">${SL.esc(r.review)}</p>
+              <div style="margin-top:6px">
+                ${r.has_spoilers ? `<span class="spoiler-warning" onclick="event.stopPropagation(); this.nextElementSibling.classList.toggle('revealed')">⚠️ Contains Spoilers — Click to reveal</span>` : ''}
+                <p style="font-size:13px;color:var(--ghost);line-height:1.65" class="${r.has_spoilers ? 'review-spoilers' : ''}" ${r.has_spoilers ? `onclick="event.stopPropagation(); this.classList.toggle('revealed')"` : ''}>${SL.esc(r.review)}</p>
+              </div>
               <p style="font-size:11px;color:var(--mist);margin-top:6px">${SL.fmt.date(r.created_at)}</p>
             </div>
           </div>
@@ -342,9 +345,9 @@ SL.Router.register('profile', async (container, params) => {
     </div>
 
     <!-- Edit profile modal -->
-    <div id="edit-modal" style="display:none;position:fixed;inset:0;z-index:1000;align-items:center;justify-content:center">
-      <div style="position:absolute;inset:0;background:rgba(0,0,0,0.3);backdrop-filter:blur(4px)" onclick="closeEditProfile()"></div>
-      <div class="glass-modal" style="position:relative;width:100%;max-width:460px;border-radius:16px;padding:28px">
+    <div id="edit-modal" style="display:none;position:fixed;inset:0;z-index:1000;align-items:center;justify-content:center;padding:20px">
+      <div style="position:absolute;inset:0;background:rgba(0,0,0,0.4);backdrop-filter:blur(4px)" onclick="closeEditProfile()"></div>
+      <div class="glass-modal" style="position:relative;width:100%;max-width:460px;max-height:calc(100vh - 40px);overflow-y:auto;border-radius:16px;padding:28px">
         <button onclick="closeEditProfile()" style="position:absolute;top:14px;right:14px;background:none;border:none;cursor:pointer;color:var(--mist)">
           <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>

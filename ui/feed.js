@@ -62,7 +62,7 @@ SL.Router.register('feed', async (container, params) => {
       const form = item.querySelector('.comment-edit-form');
       const textEl = item.querySelector('.comment-text');
       const cancelBtn = item.querySelector('.comment-cancel-btn');
-      
+
       if (editBtn) {
         editBtn.addEventListener('click', () => {
           textEl.style.display = 'none';
@@ -83,25 +83,25 @@ SL.Router.register('feed', async (container, params) => {
             textEl.textContent = newVal;
             form.style.display = 'none';
             textEl.style.display = 'block';
-          } catch(err) {
+          } catch (err) {
             SL.toast(err.message);
           } finally {
             form.querySelector('button[type="submit"]').disabled = false;
           }
         });
       }
-      
+
       if (delBtn) {
         delBtn.addEventListener('click', async () => {
           if (!confirm('Delete this reply?')) return;
           try {
             await SL.Store.comments.remove(item.dataset.id);
             item.remove();
-            
+
             // update counter
             const counter = document.querySelector(`.feed-comment-btn[data-log="${logId}"] .count`);
             if (counter) counter.textContent = Math.max(0, parseInt(counter.textContent) - 1);
-          } catch(err) {
+          } catch (err) {
             SL.toast(err.message);
           }
         });
@@ -156,9 +156,12 @@ SL.Router.register('feed', async (container, params) => {
               ${entry.liked ? `<span style="font-size:11px;color:#e05555">❤️ Liked</span>` : ''}
               ${entry.is_rewatch ? `<span class="rewatch-badge" style="margin-left:${entry.liked ? '8px' : '0'}">Rewatch</span>` : ''}
               ${entry.review ? `
-                <p class="feed-review">
-                  "${SL.esc(entry.review)}"
-                </p>
+                <div style="margin-top:8px">
+                  ${entry.has_spoilers ? `<span class="spoiler-warning" onclick="event.stopPropagation(); this.nextElementSibling.classList.toggle('revealed')">might contain spoilers - be warned! tap to unveil! </span>` : ''}
+                  <p class="feed-review ${entry.has_spoilers ? 'review-spoilers' : ''}" ${entry.has_spoilers ? `onclick="event.stopPropagation(); this.classList.toggle('revealed')"` : ''}>
+                    "${SL.esc(entry.review)}"
+                  </p>
+                </div>
               ` : ''}
             </div>
           </div>

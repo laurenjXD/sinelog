@@ -13,6 +13,7 @@ SL.Store = (() => {
       liked,
       rewatch,
       watchedOn,
+      hasSpoilers,
     } = {}) {
       const uid = SL.Auth.uid();
       if (!uid) throw new Error('Sign in to log films');
@@ -25,6 +26,7 @@ SL.Store = (() => {
         review: review || null,
         liked: liked || false,
         is_rewatch: rewatch || false,
+        has_spoilers: hasSpoilers || false,
         watched_on: watchedOn || new Date().toISOString().slice(0,10),
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id,tmdb_id' }).select().single();
