@@ -102,7 +102,7 @@ SL.Router.register('feed', async (container, params) => {
           <div style="margin-top:10px;display:flex;align-items:center;gap:16px">
             <!-- Like (Thumbs Up) -->
             <button class="feed-react-btn" data-log="${entry.id}" data-type="like" data-active="${isLike}"
-              style="display:flex;align-items:center;gap:5px;font-size:12px;color:${isLike ? '#e05555' : 'var(--mist)'};background:none;border:none;cursor:pointer;font-family:inherit;padding:4px 0;transition:color 0.15s">
+              style="display:flex;align-items:center;gap:5px;font-size:12px;color:${isLike ? '#4f46e5' : 'var(--mist)'};background:none;border:none;cursor:pointer;font-family:inherit;padding:4px 0;transition:color 0.15s">
               <svg width="14" height="14" fill="${isLike ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
                 <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
               </svg>
@@ -199,23 +199,23 @@ SL.Router.register('feed', async (container, params) => {
           try {
             const type = btn.dataset.type;
             const newReaction = await SL.Store.likes.react(btn.dataset.log, type);
-            
+
             const container = btn.closest('.feed-card');
             const likeBtn = container.querySelector('.feed-react-btn[data-type="like"]');
             const dislikeBtn = container.querySelector('.feed-react-btn[data-type="dislike"]');
-            
+
             const isLikeActive = likeBtn.dataset.active === 'true';
             const isDislikeActive = dislikeBtn.dataset.active === 'true';
-            
+
             let likeCount = parseInt(likeBtn.querySelector('.count').textContent);
             let dislikeCount = parseInt(dislikeBtn.querySelector('.count').textContent);
-            
+
             if (isLikeActive) likeCount--;
             if (isDislikeActive) dislikeCount--;
-            
+
             if (newReaction === 'like') likeCount++;
             if (newReaction === 'dislike') dislikeCount++;
-            
+
             likeBtn.dataset.active = (newReaction === 'like').toString();
             likeBtn.style.color = newReaction === 'like' ? '#e05555' : 'var(--mist)';
             likeBtn.querySelector('svg').setAttribute('fill', newReaction === 'like' ? 'currentColor' : 'none');
@@ -225,7 +225,7 @@ SL.Router.register('feed', async (container, params) => {
             dislikeBtn.style.color = newReaction === 'dislike' ? 'var(--ghost)' : 'var(--mist)';
             dislikeBtn.querySelector('svg').setAttribute('fill', newReaction === 'dislike' ? 'currentColor' : 'none');
             dislikeBtn.querySelector('.count').textContent = dislikeCount;
-          } catch(e) { SL.toast(e.message); }
+          } catch (e) { SL.toast(e.message); }
         });
       });
 
@@ -236,19 +236,19 @@ SL.Router.register('feed', async (container, params) => {
           const logId = btn.dataset.log;
           const section = document.getElementById(`comments-${logId}`);
           const listEl = section.querySelector('.comments-list');
-          
+
           if (section.style.display === 'block') {
             section.style.display = 'none';
             return;
           }
-          
+
           section.style.display = 'block';
           listEl.innerHTML = '<div class="spinner spinner-sm" style="margin:10px auto"></div>';
-          
+
           try {
             const comments = await SL.Store.comments.getForLog(logId);
             renderCommentsList(listEl, comments);
-          } catch(e) {
+          } catch (e) {
             listEl.innerHTML = `<span style="color:#dc2626">Failed to load comments</span>`;
           }
         });
@@ -270,23 +270,23 @@ SL.Router.register('feed', async (container, params) => {
           try {
             await SL.Store.comments.add(logId, text);
             input.value = '';
-            
+
             const listEl = document.getElementById(`comments-${logId}`).querySelector('.comments-list');
             listEl.innerHTML = '<div class="spinner spinner-sm" style="margin:10px auto"></div>';
             const comments = await SL.Store.comments.getForLog(logId);
             renderCommentsList(listEl, comments);
-            
+
             // Increment counter visually
             const counter = form.closest('.feed-card').querySelector('.feed-comment-btn .count');
             counter.textContent = parseInt(counter.textContent) + 1;
-          } catch(err) {
+          } catch (err) {
             SL.toast(err.message);
           } finally {
             submitBtn.disabled = false;
           }
         });
       });
-    } catch(e) {
+    } catch (e) {
       console.error('Feed load error:', e);
       SL.toast('Failed to load feed');
     } finally {
