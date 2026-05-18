@@ -40,7 +40,16 @@ SL.esc = (s = '') => String(s)
 SL.fmt = {
   runtime: (min) => min ? `${Math.floor(min / 60)}h ${min % 60}m` : '',
   year:    (d) => d?.slice(0, 4) || '—',
-  date:    (d) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—',
+  date: (d) => {
+    if (!d) return '—';
+    const dateObj = new Date(d);
+    const isCurrentYear = dateObj.getFullYear() === new Date().getFullYear();
+    return dateObj.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: isCurrentYear ? undefined : 'numeric'
+    });
+  },
   rating:  (n) => n ? `★ ${Number(n).toFixed(1)}` : '',
 };
 
