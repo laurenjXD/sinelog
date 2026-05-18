@@ -104,38 +104,74 @@ SL.Store = (() => {
     },
   };
 
-  // ── Review Likes ─────────────────────────────────────────────
+  // ── Review Reactions ─────────────────────────────────────────
   const likes = {
-    async toggle(logId) {
+    async react(logId, type) {
       const uid = SL.Auth.uid();
-      if (!uid) throw new Error('Sign in to like reviews');
+      if (!uid) throw new Error('Sign in to react to reviews');
 
       const { data: existing } = await sb().from('review_likes')
-        .select('id').eq('user_id', uid).eq('log_id', logId).maybeSingle();
+        .select('id, reaction_type').eq('user_id', uid).eq('log_id', logId).maybeSingle();
 
       if (existing) {
-        await sb().from('review_likes').delete().eq('id', existing.id);
-        return false;
+        if (existing.reaction_type === type) {
+          // Toggle off
+          await sb().from('review_likes').delete().eq('id', existing.id);
+          return null;
+        } else {
+          // Switch reaction
+          await sb().from('review_likes').update({ reaction_type: type }).eq('id', existing.id);
+          return type;
+        }
       } else {
-        await sb().from('review_likes').insert({ user_id: uid, log_id: logId });
-        return true;
+        // New reaction
+        await sb().from('review_likes').insert({ user_id: uid, log_id: logId, reaction_type: type });
+        return type;
       }
     },
 
-    async hasLiked(logId) {
-      const uid = SL.Auth.uid();
-      if (!uid) return false;
-      const { data } = await sb().from('review_likes')
-        .select('id').eq('user_id', uid).eq('log_id', logId).maybeSingle();
-      return !!data;
-    },
-
-    async myLikes() {
+    async myReactions() {
       const uid = SL.Auth.uid();
       if (!uid) return [];
-      const { data } = await sb().from('review_likes').select('log_id').eq('user_id', uid);
-      return (data || []).map(r => r.log_id);
+      const { data } = await sb().from('review_likes').select('log_id, reaction_type').eq('user_id', uid);
+      return data || [];
     },
+  };
+
+  // ── Comments ─────────────────────────────────────────────────
+  const comments = {
+    async getForLog(logId) {
+      const { data, error } = await sb().from('review_comments')
+        .select('id, content, created_at, user_id, profiles!review_comments_user_id_fkey(username, display_name, avatar_url)')
+        .eq('log_id', logId)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      return (data || []).map(r => ({
+        id: r.id,
+        content: r.content,
+        created_at: r.created_at,
+        user_id: r.user_id,
+        username: r.profiles.username,
+        display_name: r.profiles.display_name,
+        avatar_url: r.profiles.avatar_url
+      }));
+    },
+    async add(logId, content) {
+      const uid = SL.Auth.uid();
+      if (!uid) throw new Error('Sign in to comment');
+      const { error } = await sb().from('review_comments').insert({
+        user_id: uid,
+        log_id: logId,
+        content: content
+      });
+      if (error) throw error;
+    },
+    async remove(commentId) {
+      const uid = SL.Auth.uid();
+      if (!uid) throw new Error('Sign in to manage comments');
+      const { error } = await sb().from('review_comments').delete().eq('id', commentId).eq('user_id', uid);
+      if (error) throw error;
+    }
   };
 
   // ── Follows ──────────────────────────────────────────────────
@@ -246,5 +282,5 @@ SL.Store = (() => {
     },
   };
 
-  return { logs, watchlist, likes, follows, profiles, feed };
+  return { logs, watchlist, likes, comments, follows, profiles, feed };
 })();

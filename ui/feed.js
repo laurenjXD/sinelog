@@ -25,8 +25,29 @@ SL.Router.register('feed', async (container, params) => {
     `).join('');
   }
 
-  function feedCard(entry, myLikes = []) {
-    const liked = myLikes.includes(entry.id);
+  function renderCommentsList(container, comments) {
+    if (!comments.length) {
+      container.innerHTML = '<span style="color:var(--mist)">No replies yet.</span>';
+      return;
+    }
+    container.innerHTML = comments.map(c => `
+      <div style="display:flex;gap:8px">
+        <img src="${SL.img.profile(c.avatar_url, 'w92')}" style="width:24px;height:24px;border-radius:50%;object-fit:cover;border:1px solid var(--border)" />
+        <div style="background:var(--surface-2);border-radius:8px;padding:8px 12px;flex:1;min-width:0">
+          <div style="display:flex;justify-content:space-between;margin-bottom:2px">
+            <span style="font-weight:600;color:var(--text);font-size:12px">${SL.esc(c.display_name || c.username)}</span>
+            <span style="color:var(--mist);font-size:11px">${SL.fmt.date(c.created_at)}</span>
+          </div>
+          <div style="color:var(--text);font-size:13px;word-break:break-word">${SL.esc(c.content)}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function feedCard(entry, myReactions = []) {
+    const myReaction = myReactions.find(r => r.log_id === entry.id)?.reaction_type;
+    const isLike = myReaction === 'like';
+    const isDislike = myReaction === 'dislike';
     const stars = SL.ratingStars(entry.rating);
     return `
       <div class="feed-card" style="display:flex;gap:14px;padding:16px;border-bottom:1px solid var(--border);margin-bottom:14px">
@@ -77,16 +98,43 @@ SL.Router.register('feed', async (container, params) => {
             </div>
           </div>
 
-          <!-- Like button -->
-          <div style="margin-top:10px;display:flex;align-items:center;gap:6px">
-            <button class="feed-like-btn" data-log="${entry.id}" data-liked="${liked}"
-              style="display:flex;align-items:center;gap:5px;font-size:12px;color:${liked ? '#e05555' : 'var(--mist)'};background:none;border:none;cursor:pointer;font-family:inherit;padding:4px 0;transition:color 0.15s">
-              <svg width="13" height="13" fill="${liked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          <!-- Action Buttons -->
+          <div style="margin-top:10px;display:flex;align-items:center;gap:16px">
+            <!-- Like (Thumbs Up) -->
+            <button class="feed-react-btn" data-log="${entry.id}" data-type="like" data-active="${isLike}"
+              style="display:flex;align-items:center;gap:5px;font-size:12px;color:${isLike ? '#e05555' : 'var(--mist)'};background:none;border:none;cursor:pointer;font-family:inherit;padding:4px 0;transition:color 0.15s">
+              <svg width="14" height="14" fill="${isLike ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
               </svg>
-              <span>${entry.like_count || 0}</span>
+              <span class="count">${entry.like_count || 0}</span>
             </button>
+            <!-- Dislike (Thumbs Down) -->
+            <button class="feed-react-btn" data-log="${entry.id}" data-type="dislike" data-active="${isDislike}"
+              style="display:flex;align-items:center;gap:5px;font-size:12px;color:${isDislike ? 'var(--ghost)' : 'var(--mist)'};background:none;border:none;cursor:pointer;font-family:inherit;padding:4px 0;transition:color 0.15s">
+              <svg width="14" height="14" fill="${isDislike ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h2.67A2.31 2.31 0 0 1 22 4v7a2.31 2.31 0 0 1-2.33 2H17"/>
+              </svg>
+              <span class="count">${entry.dislike_count || 0}</span>
+            </button>
+            <!-- Comment -->
+            <button class="feed-comment-btn" data-log="${entry.id}"
+              style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--mist);background:none;border:none;cursor:pointer;font-family:inherit;padding:4px 0;transition:color 0.15s">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+              </svg>
+              <span class="count">${entry.comment_count || 0}</span>
+            </button>
+            <div style="flex:1"></div>
             ${entry.watched_on ? `<span style="font-size:11px;color:var(--mist)">Watched ${SL.fmt.date(entry.watched_on)}</span>` : ''}
+          </div>
+
+          <!-- Comments Thread -->
+          <div id="comments-${entry.id}" style="display:none;margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+            <div class="comments-list" style="display:flex;flex-direction:column;gap:12px;margin-bottom:12px;max-height:240px;overflow-y:auto;font-size:13px"></div>
+            <form class="comment-form" data-log="${entry.id}" style="display:flex;gap:8px">
+              <input type="text" class="input" placeholder="Write a reply..." required style="padding:8px 12px;font-size:13px;border-radius:8px;min-height:0" />
+              <button type="submit" class="btn btn-primary btn-sm" style="padding:8px 14px;border-radius:8px">Post</button>
+            </form>
           </div>
         </div>
       </div>
@@ -118,7 +166,7 @@ SL.Router.register('feed', async (container, params) => {
         entries = await SL.Store.feed.global(page);
       }
 
-      const myLikes = SL.Auth.isAuthed() ? await SL.Store.likes.myLikes() : [];
+      const myReactions = SL.Auth.isAuthed() ? await SL.Store.likes.myReactions() : [];
       const list = document.getElementById('feed-list');
 
       if (!entries.length) {
@@ -135,7 +183,7 @@ SL.Router.register('feed', async (container, params) => {
         return;
       }
 
-      const cards = entries.map(e => feedCard(e, myLikes)).join('');
+      const cards = entries.map(e => feedCard(e, myReactions)).join('');
       if (page === 0) {
         list.innerHTML = cards;
       } else {
@@ -143,19 +191,99 @@ SL.Router.register('feed', async (container, params) => {
       }
       page++;
 
-      // Bind like buttons
-      list.querySelectorAll('.feed-like-btn:not([data-bound])').forEach(btn => {
+      // Bind reaction buttons
+      list.querySelectorAll('.feed-react-btn:not([data-bound])').forEach(btn => {
         btn.dataset.bound = '1';
         btn.addEventListener('click', async () => {
           if (!SL.Auth.isAuthed()) { SL.AuthPanel.open(); return; }
           try {
-            const nowLiked = await SL.Store.likes.toggle(btn.dataset.log);
-            btn.dataset.liked = nowLiked;
-            btn.style.color = nowLiked ? '#e05555' : 'var(--mist)';
-            btn.querySelector('svg').setAttribute('fill', nowLiked ? 'currentColor' : 'none');
-            const countEl = btn.querySelector('span');
-            countEl.textContent = Math.max(0, parseInt(countEl.textContent) + (nowLiked ? 1 : -1));
+            const type = btn.dataset.type;
+            const newReaction = await SL.Store.likes.react(btn.dataset.log, type);
+            
+            const container = btn.closest('.feed-card');
+            const likeBtn = container.querySelector('.feed-react-btn[data-type="like"]');
+            const dislikeBtn = container.querySelector('.feed-react-btn[data-type="dislike"]');
+            
+            const isLikeActive = likeBtn.dataset.active === 'true';
+            const isDislikeActive = dislikeBtn.dataset.active === 'true';
+            
+            let likeCount = parseInt(likeBtn.querySelector('.count').textContent);
+            let dislikeCount = parseInt(dislikeBtn.querySelector('.count').textContent);
+            
+            if (isLikeActive) likeCount--;
+            if (isDislikeActive) dislikeCount--;
+            
+            if (newReaction === 'like') likeCount++;
+            if (newReaction === 'dislike') dislikeCount++;
+            
+            likeBtn.dataset.active = (newReaction === 'like').toString();
+            likeBtn.style.color = newReaction === 'like' ? '#e05555' : 'var(--mist)';
+            likeBtn.querySelector('svg').setAttribute('fill', newReaction === 'like' ? 'currentColor' : 'none');
+            likeBtn.querySelector('.count').textContent = likeCount;
+
+            dislikeBtn.dataset.active = (newReaction === 'dislike').toString();
+            dislikeBtn.style.color = newReaction === 'dislike' ? 'var(--ghost)' : 'var(--mist)';
+            dislikeBtn.querySelector('svg').setAttribute('fill', newReaction === 'dislike' ? 'currentColor' : 'none');
+            dislikeBtn.querySelector('.count').textContent = dislikeCount;
           } catch(e) { SL.toast(e.message); }
+        });
+      });
+
+      // Bind comment toggles
+      list.querySelectorAll('.feed-comment-btn:not([data-bound])').forEach(btn => {
+        btn.dataset.bound = '1';
+        btn.addEventListener('click', async () => {
+          const logId = btn.dataset.log;
+          const section = document.getElementById(`comments-${logId}`);
+          const listEl = section.querySelector('.comments-list');
+          
+          if (section.style.display === 'block') {
+            section.style.display = 'none';
+            return;
+          }
+          
+          section.style.display = 'block';
+          listEl.innerHTML = '<div class="spinner spinner-sm" style="margin:10px auto"></div>';
+          
+          try {
+            const comments = await SL.Store.comments.getForLog(logId);
+            renderCommentsList(listEl, comments);
+          } catch(e) {
+            listEl.innerHTML = `<span style="color:#dc2626">Failed to load comments</span>`;
+          }
+        });
+      });
+
+      // Bind comment submits
+      list.querySelectorAll('.comment-form:not([data-bound])').forEach(form => {
+        form.dataset.bound = '1';
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          if (!SL.Auth.isAuthed()) { SL.AuthPanel.open(); return; }
+          const logId = form.dataset.log;
+          const input = form.querySelector('input');
+          const submitBtn = form.querySelector('button');
+          const text = input.value.trim();
+          if (!text) return;
+
+          submitBtn.disabled = true;
+          try {
+            await SL.Store.comments.add(logId, text);
+            input.value = '';
+            
+            const listEl = document.getElementById(`comments-${logId}`).querySelector('.comments-list');
+            listEl.innerHTML = '<div class="spinner spinner-sm" style="margin:10px auto"></div>';
+            const comments = await SL.Store.comments.getForLog(logId);
+            renderCommentsList(listEl, comments);
+            
+            // Increment counter visually
+            const counter = form.closest('.feed-card').querySelector('.feed-comment-btn .count');
+            counter.textContent = parseInt(counter.textContent) + 1;
+          } catch(err) {
+            SL.toast(err.message);
+          } finally {
+            submitBtn.disabled = false;
+          }
         });
       });
     } catch(e) {
