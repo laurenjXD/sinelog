@@ -28,7 +28,11 @@ SL.GENRE_NAMES = {
 SL.img = {
   poster:   (p, s = 'w342') => p ? `${SL.CONFIG.IMG_BASE}${s}${p}` : 'https://placehold.co/342x513/f0f0f8/8080a0?text=No+Poster',
   backdrop: (p, s = 'w1280') => p ? `${SL.CONFIG.IMG_BASE}${s}${p}` : '',
-  profile:  (p, s = 'w185') => p ? `${SL.CONFIG.IMG_BASE}${s}${p}` : 'https://placehold.co/185x185/e4e4ee/8080a0?text=%3F',
+  profile:  (p, s = 'w185') => {
+    if (!p) return 'https://placehold.co/185x185/e4e4ee/8080a0?text=%3F';
+    if (p.startsWith('http')) return p;
+    return `${SL.CONFIG.IMG_BASE}${s}${p}`;
+  },
 };
 
 // ── HTML escape ───────────────────────────────────────────────────
