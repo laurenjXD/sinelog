@@ -403,19 +403,22 @@ SL.Router.register('profile', async (container, params) => {
       
       let aiResponseText = "";
       try {
+        const myName = SL.Auth.user()?.user_metadata?.display_name || SL.Auth.user()?.user_metadata?.username || "me";
+        const theirName = profile.display_name || profile.username || "this user";
+
         const prompt = `You are an expert film critic AI for the SineLog app.
-I am User A, visiting User B's profile.
+I am ${myName}, visiting ${theirName}'s profile.
 
 My recently watched/liked movies:
 ${myLogs.slice(0, 15).map(l => `- "${l.movie_title}": ${l.rating || 0}/5 stars ${l.liked ? '(Liked)' : ''}`).join('\n')}
 
-Their recently watched/liked movies:
+${theirName}'s recently watched/liked movies:
 ${theirLogs.slice(0, 15).map(l => `- "${l.movie_title}": ${l.rating || 0}/5 stars ${l.liked ? '(Liked)' : ''}`).join('\n')}
 
 Calculate our Cinematic Compatibility Score (0-100%) based on genres, themes, and ratings. 
 Do NOT use markdown. Format your response exactly like this using HTML tags:
 <div style="font-size:24px;font-weight:700;color:var(--accent);margin-bottom:8px">Compatibility: [Score]%</div>
-<div style="margin-bottom:8px"><strong>Verdict:</strong> [1 sentence summary about our taste overlap]</div>
+<div style="margin-bottom:8px"><strong>Verdict:</strong> [1 sentence summary about our taste overlap using our actual names (${myName} and ${theirName})]</div>
 <div><strong>Details:</strong><br/>- [Reason 1 based on our shared or differing tastes]<br/>- [Reason 2 based on our shared or differing tastes]</div>`;
 
         const aiResponse = await puter.ai.chat(prompt);

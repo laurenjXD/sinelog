@@ -26,12 +26,12 @@ SL.Nav = (() => {
       <div style="flex:1"></div>
 
       <div class="nav-search-box">
-        <div style="display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border-strong);border-radius:10px;padding:8px 12px;transition:border-color 0.2s,box-shadow 0.2s" id="search-wrap">
+        <div style="height:36px;display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border-strong);border-radius:10px;padding:0 12px;transition:border-color 0.2s,box-shadow 0.2s" id="search-wrap">
           <svg width="14" height="14" fill="none" stroke="var(--accent)" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0">
             <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
           </svg>
           <input id="nav-search" type="text" placeholder="Search films or users..."
-            style="background:none;border:none;outline:none;font-size:13px;color:var(--text);width:100%;font-family:inherit"
+            style="background:none;border:none;outline:none;font-size:13px;color:var(--text);width:100%;font-family:inherit;height:100%;"
             autocomplete="off" />
           <div class="spinner spinner-sm" id="search-spinner" style="display:none"></div>
         </div>
@@ -47,10 +47,10 @@ SL.Nav = (() => {
           : `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>`
         }
           </button>
-          <button class="btn btn-ghost btn-sm hide-mobile" id="nav-signout">Sign out</button>
+          <button class="btn btn-ghost hide-mobile" id="nav-signout" style="height:36px;padding:0 16px;">Sign out</button>
         ` : `
-          <button class="btn btn-ghost btn-sm" onclick="SL.AuthPanel.open('login')">Sign in</button>
-          <button class="btn btn-primary btn-sm hide-mobile" onclick="SL.AuthPanel.open('signup')">Join free</button>
+          <button class="btn btn-ghost" style="height:36px;padding:0 16px;" onclick="SL.AuthPanel.open('login')">Sign in</button>
+          <button class="btn btn-primary hide-mobile" style="height:36px;padding:0 16px;" onclick="SL.AuthPanel.open('signup')">Join free</button>
         `}
         
         <!-- Mobile Menu Toggle -->
