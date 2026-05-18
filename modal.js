@@ -551,7 +551,7 @@ Do NOT use markdown in your response. Instead, format your response exactly with
     const el = document.getElementById('community-reviews');
     if (!el) return;
     const reviews = await SL.Store.logs.getForMovie(movieId, 8);
-    const myLikes = await SL.Store.likes.myLikes();
+    const myReactions = await SL.Store.likes.myReactions();
 
     if (!reviews.length) return;
 
@@ -561,7 +561,7 @@ Do NOT use markdown in your response. Instead, format your response exactly with
         Community Reviews
       </p>
       ${reviews.map(r => {
-        const liked = myLikes.includes(r.id);
+        const liked = myReactions.find(rx => rx.log_id === r.id && rx.reaction_type === 'like');
         return `
         <div style="display:flex;gap:12px;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border)">
           <img src="${SL.img.profile(r.avatar_url,'w92')}" class="avatar" style="width:36px;height:36px;flex-shrink:0" />
@@ -596,7 +596,8 @@ Do NOT use markdown in your response. Instead, format your response exactly with
         if (!SL.Auth.isAuthed()) { SL.AuthPanel.open(); return; }
         const logId = btn.dataset.log;
         try {
-          const nowLiked = await SL.Store.likes.toggle(logId);
+          const type = await SL.Store.likes.react(logId, 'like');
+          const nowLiked = type === 'like';
           btn.dataset.liked = nowLiked;
           btn.style.color = nowLiked ? '#e05555' : 'var(--mist)';
           btn.querySelector('svg').setAttribute('fill', nowLiked ? 'currentColor' : 'none');
