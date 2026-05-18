@@ -47,7 +47,8 @@ SL.Auth = (() => {
     const { data, error } = await window._supabase.auth.signUp({
       email, password,
       options: {
-        data: { username, display_name: displayName || username }
+        data: { username, display_name: displayName || username },
+        emailRedirectTo: `${window.location.origin}${window.location.pathname}`
       }
     });
     if (error) throw error;
@@ -226,6 +227,12 @@ SL.AuthPanel = (() => {
           <input class="input" id="auth-password" type="password" placeholder="••••••••" autocomplete="${isLogin ? 'current-password' : 'new-password'}" required />
         </div>
 
+        ${!isLogin ? `
+        <div class="form-group">
+          <label class="input-label">Confirm Password</label>
+          <input class="input" id="auth-confirm-password" type="password" placeholder="••••••••" autocomplete="new-password" required />
+        </div>` : ''}
+
         <button type="submit" class="btn btn-primary btn-lg" id="auth-submit" style="margin-top:4px;width:100%;justify-content:center">
           ${isLogin ? 'Sign In' : 'Create Account'}
         </button>
@@ -254,6 +261,15 @@ SL.AuthPanel = (() => {
 
       const email    = document.getElementById('auth-email').value.trim();
       const password = document.getElementById('auth-password').value;
+
+      if (!isLogin) {
+        const confirmPassword = document.getElementById('auth-confirm-password').value;
+        if (password !== confirmPassword) {
+          errEl.textContent = 'Passwords do not match.';
+          errEl.style.display = 'block';
+          return;
+        }
+      }
 
       submitBtn.disabled = true;
       submitBtn.innerHTML = '<div class="spinner spinner-sm"></div>';
