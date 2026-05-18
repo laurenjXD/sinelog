@@ -30,8 +30,9 @@ SL.img = {
   backdrop: (p, s = 'w1280') => p ? `${SL.CONFIG.IMG_BASE}${s}${p}` : '',
   profile:  (p, s = 'w185') => {
     if (!p) return 'https://placehold.co/185x185/e4e4ee/8080a0?text=%3F';
-    if (p.startsWith('http')) return p;
-    return `${SL.CONFIG.IMG_BASE}${s}${p}`;
+    if (p.startsWith('/')) return `${SL.CONFIG.IMG_BASE}${s}${p}`;
+    if (!p.startsWith('http')) return `https://${p}`;
+    return p;
   },
 };
 

@@ -121,6 +121,7 @@ SL.Router.register('feed', async (container, params) => {
           <button onclick="SL.Router.navigate('profile',{userId:'${entry.user_id}'})"
             style="background:none;border:none;cursor:pointer;padding:0">
             <img src="${SL.img.profile(entry.avatar_url, 'w92')}"
+              onerror="this.onerror=null; this.src='https://placehold.co/96x96/e4e4ee/8080a0?text=${encodeURIComponent((entry.display_name||entry.username||'?')[0].toUpperCase())}';"
               style="width:42px;height:42px;border-radius:50%;object-fit:cover;object-position:top;border:1px solid var(--border)" />
           </button>
         </div>

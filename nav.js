@@ -124,6 +124,10 @@ SL.Nav = (() => {
           document.querySelectorAll('.nav-avatar').forEach(img => {
             img.src = avatarUrl;
             img.style.display = 'block';
+            img.onerror = function() {
+              this.style.display = 'none';
+              document.querySelectorAll('.nav-avatar-fallback').forEach(svg => svg.style.display = 'block');
+            };
           });
           document.querySelectorAll('.nav-avatar-fallback').forEach(svg => {
             svg.style.display = 'none';

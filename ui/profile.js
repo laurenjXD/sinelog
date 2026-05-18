@@ -277,6 +277,7 @@ SL.Router.register('profile', async (container, params) => {
         <!-- Avatar -->
         <div style="position:relative">
           <img src="${profile.avatar_url ? SL.img.profile(profile.avatar_url,'w185') : 'https://placehold.co/96x96/e4e4ee/8080a0?text=' + encodeURIComponent((profile.display_name||profile.username||'?')[0].toUpperCase())}"
+            onerror="this.onerror=null; this.src='https://placehold.co/96x96/e4e4ee/8080a0?text=${encodeURIComponent((profile.display_name||profile.username||'?')[0].toUpperCase())}';"
             style="width:88px;height:88px;border-radius:50%;object-fit:cover;border:3px solid var(--border)" />
         </div>
 
