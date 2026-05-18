@@ -48,20 +48,18 @@ SL.Modal = (() => {
       const trailerKey = movie.videos?.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube')?.key;
 
       sheet.innerHTML = `
+        <button onclick="SL.Modal.close()" style="position:absolute;top:14px;right:14px;z-index:100;width:34px;height:34px;border-radius:8px;background:rgba(255,255,255,0.85);border:1px solid rgba(0,0,0,0.1);color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(6px);box-shadow:0 4px 12px rgba(0,0,0,0.1)">
+          <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
         <div class="modal-scroll-content">
         <!-- Backdrop -->
         <div style="position:relative">
           <img id="modal-backdrop-img"
-            src="${SL.img.backdrop(movie.backdrop_path) || SL.img.poster(movie.poster_path,'w780')}"
-            alt="${SL.esc(movie.title)}"
-            style="width:100%;height:300px;object-fit:cover;object-position:center 20%;display:block"
+             src="${SL.img.backdrop(movie.backdrop_path) || SL.img.poster(movie.poster_path,'w780')}"
+             alt="${SL.esc(movie.title)}"
+             style="width:100%;height:300px;object-fit:cover;object-position:center 20%;display:block"
           />
           <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(255,255,255,0.97) 100%)"></div>
-
-          <!-- Close -->
-          <button onclick="SL.Modal.close()" style="position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:8px;background:rgba(255,255,255,0.72);border:1px solid rgba(0,0,0,0.1);color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(4px)">
-            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
-          </button>
 
           ${myLog?.rating ? `<div style="position:absolute;top:14px;left:14px;background:var(--accent);color:#fff;font-size:10px;font-weight:800;letter-spacing:0.1em;padding:3px 10px;border-radius:5px">✓ LOGGED</div>` : ''}
 

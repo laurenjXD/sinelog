@@ -101,14 +101,23 @@ SL.Router = (() => {
 
   function register(name, renderFn) { pages[name] = renderFn; }
 
-  async function navigate(name, params = {}) {
+  async function navigate(name, params = {}, push = true) {
     if (!container) container = document.getElementById('app');
+
+    // Close any open modal on navigation
+    if (window.SL?.Modal?.close) SL.Modal.close();
+
+    if (push) {
+      const urlParams = Object.keys(params).length ? '?' + new URLSearchParams(params).toString() : '';
+      window.history.pushState({ name, params }, '', '#' + name + urlParams);
+    }
 
     current = name;
     container.innerHTML = '<div class="loading-state full-page vertical"><div class="spinner" style="width:32px;height:32px"></div><div>Loading page...</div></div>';
 
     try {
       if (pages[name]) {
+        window.scrollTo(0, 0);
         await pages[name](container, params);
         // Update navbar state (e.g., highlighting active link)
         if (window.SL?.Nav?.update) SL.Nav.update();
@@ -120,6 +129,16 @@ SL.Router = (() => {
       container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><div class="empty-state-title">Something went wrong</div><div class="empty-state-text">${SL.esc(e.message)}</div></div>`;
     }
   }
+
+  // Handle browser back/forward buttons
+  window.addEventListener('popstate', (e) => {
+    if (e.state && e.state.name) {
+      navigate(e.state.name, e.state.params, false);
+    } else {
+      // Default fallback
+      navigate('home', {}, false);
+    }
+  });
 
   return { register, navigate, current: () => current };
 })();

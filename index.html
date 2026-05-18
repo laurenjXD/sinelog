@@ -187,8 +187,15 @@ SUPABASE_ANON: 'your_supabase_anon_key'</pre>
           return;
         }
 
-        // ── Navigate to home ──────────────────────────────────────
-        await SL.Router.navigate('home');
+        // ── Initial Navigation ────────────────────────────────────
+        const hash = window.location.hash.slice(1);
+        if (hash) {
+          const [name, query] = hash.split('?');
+          const params = Object.fromEntries(new URLSearchParams(query || ''));
+          await SL.Router.navigate(name, params, false);
+        } else {
+          await SL.Router.navigate('home', {}, false);
+        }
       })();
   </script>
 </body>

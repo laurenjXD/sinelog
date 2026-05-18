@@ -956,7 +956,7 @@ textarea.input {
   position: relative;
   width: 100%;
   max-width: 800px;
-  max-height: 92vh;
+  max-height: 92dvh;
   overflow: hidden;
   border-radius: 20px 20px 0 0;
   transform: translateY(80px);
@@ -971,7 +971,7 @@ textarea.input {
 
   #modal-sheet {
     border-radius: 18px;
-    max-height: 90vh;
+    max-height: 90dvh;
   }
 }
 
@@ -981,7 +981,7 @@ textarea.input {
 
 .modal-scroll-content {
   width: 100%;
-  max-height: 92vh;
+  max-height: 92dvh;
   overflow-x: hidden;
   overflow-y: auto;
   border-radius: inherit;
@@ -1092,7 +1092,7 @@ textarea.input {
 
 @media (min-width: 768px) {
   .modal-scroll-content {
-    max-height: 90vh;
+    max-height: 90dvh;
   }
 }
 
