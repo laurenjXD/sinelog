@@ -166,6 +166,12 @@ SL.Store = (() => {
       });
       if (error) throw error;
     },
+    async update(commentId, newContent) {
+      const uid = SL.Auth.uid();
+      if (!uid) throw new Error('Sign in to edit comments');
+      const { error } = await sb().from('review_comments').update({ content: newContent }).eq('id', commentId).eq('user_id', uid);
+      if (error) throw error;
+    },
     async remove(commentId) {
       const uid = SL.Auth.uid();
       if (!uid) throw new Error('Sign in to manage comments');

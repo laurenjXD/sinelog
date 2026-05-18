@@ -25,23 +25,88 @@ SL.Router.register('feed', async (container, params) => {
     `).join('');
   }
 
-  function renderCommentsList(container, comments) {
+  function renderCommentsList(container, comments, logId) {
     if (!comments.length) {
       container.innerHTML = '<span style="color:var(--mist)">No replies yet.</span>';
       return;
     }
+    const myUid = SL.Auth.uid();
     container.innerHTML = comments.map(c => `
-      <div style="display:flex;gap:8px">
-        <img src="${SL.img.profile(c.avatar_url, 'w92')}" style="width:24px;height:24px;border-radius:50%;object-fit:cover;border:1px solid var(--border)" />
+      <div class="comment-item" style="display:flex;gap:8px" data-id="${c.id}" data-log="${logId}">
+        <img src="${SL.img.profile(c.avatar_url, 'w92')}" style="width:24px;height:24px;border-radius:50%;object-fit:cover;border:1px solid var(--border);flex-shrink:0" />
         <div style="background:var(--surface-2);border-radius:8px;padding:8px 12px;flex:1;min-width:0">
-          <div style="display:flex;justify-content:space-between;margin-bottom:2px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
             <span style="font-weight:600;color:var(--text);font-size:12px">${SL.esc(c.display_name || c.username)}</span>
-            <span style="color:var(--mist);font-size:11px">${SL.fmt.date(c.created_at)}</span>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="color:var(--mist);font-size:11px">${SL.fmt.date(c.created_at)}</span>
+              ${c.user_id === myUid ? `
+                <button class="comment-edit-btn" style="background:none;border:none;color:var(--ghost);cursor:pointer;padding:0;font-size:12px" title="Edit">✎</button>
+                <button class="comment-del-btn" style="background:none;border:none;color:var(--ghost);cursor:pointer;padding:0;font-size:14px;line-height:1" title="Delete">×</button>
+              ` : ''}
+            </div>
           </div>
-          <div style="color:var(--text);font-size:13px;word-break:break-word">${SL.esc(c.content)}</div>
+          <div class="comment-text" style="color:var(--text);font-size:13px;word-break:break-word">${SL.esc(c.content)}</div>
+          <form class="comment-edit-form" style="display:none;margin-top:6px;display:none;gap:6px">
+            <input type="text" class="input" style="flex:1;padding:4px 8px;font-size:12px;min-height:0;border-radius:4px" value="${SL.esc(c.content)}" required />
+            <button type="submit" class="btn btn-primary btn-sm" style="padding:4px 8px;font-size:11px;border-radius:4px">Save</button>
+            <button type="button" class="comment-cancel-btn btn btn-sm" style="padding:4px 8px;font-size:11px;border-radius:4px;background:var(--surface-3);border:none;color:var(--text)">Cancel</button>
+          </form>
         </div>
       </div>
     `).join('');
+
+    // Bind edit/delete events
+    container.querySelectorAll('.comment-item').forEach(item => {
+      const editBtn = item.querySelector('.comment-edit-btn');
+      const delBtn = item.querySelector('.comment-del-btn');
+      const form = item.querySelector('.comment-edit-form');
+      const textEl = item.querySelector('.comment-text');
+      const cancelBtn = item.querySelector('.comment-cancel-btn');
+      
+      if (editBtn) {
+        editBtn.addEventListener('click', () => {
+          textEl.style.display = 'none';
+          form.style.display = 'flex';
+          form.querySelector('input').focus();
+        });
+        cancelBtn.addEventListener('click', () => {
+          form.style.display = 'none';
+          textEl.style.display = 'block';
+        });
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const newVal = form.querySelector('input').value.trim();
+          if (!newVal) return;
+          try {
+            form.querySelector('button[type="submit"]').disabled = true;
+            await SL.Store.comments.update(item.dataset.id, newVal);
+            textEl.textContent = newVal;
+            form.style.display = 'none';
+            textEl.style.display = 'block';
+          } catch(err) {
+            SL.toast(err.message);
+          } finally {
+            form.querySelector('button[type="submit"]').disabled = false;
+          }
+        });
+      }
+      
+      if (delBtn) {
+        delBtn.addEventListener('click', async () => {
+          if (!confirm('Delete this reply?')) return;
+          try {
+            await SL.Store.comments.remove(item.dataset.id);
+            item.remove();
+            
+            // update counter
+            const counter = document.querySelector(`.feed-comment-btn[data-log="${logId}"] .count`);
+            if (counter) counter.textContent = Math.max(0, parseInt(counter.textContent) - 1);
+          } catch(err) {
+            SL.toast(err.message);
+          }
+        });
+      }
+    });
   }
 
   function feedCard(entry, myReactions = []) {
@@ -247,7 +312,7 @@ SL.Router.register('feed', async (container, params) => {
 
           try {
             const comments = await SL.Store.comments.getForLog(logId);
-            renderCommentsList(listEl, comments);
+            renderCommentsList(listEl, comments, logId);
           } catch (e) {
             listEl.innerHTML = `<span style="color:#dc2626">Failed to load comments</span>`;
           }
@@ -274,7 +339,7 @@ SL.Router.register('feed', async (container, params) => {
             const listEl = document.getElementById(`comments-${logId}`).querySelector('.comments-list');
             listEl.innerHTML = '<div class="spinner spinner-sm" style="margin:10px auto"></div>';
             const comments = await SL.Store.comments.getForLog(logId);
-            renderCommentsList(listEl, comments);
+            renderCommentsList(listEl, comments, logId);
 
             // Increment counter visually
             const counter = form.closest('.feed-card').querySelector('.feed-comment-btn .count');
