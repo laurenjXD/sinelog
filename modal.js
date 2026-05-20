@@ -61,18 +61,19 @@ SL.Modal = (() => {
           <img id="modal-backdrop-img"
              src="${SL.img.backdrop(movie.backdrop_path) || SL.img.poster(movie.poster_path,'w780')}"
              alt="${SL.esc(movie.title)}"
-             style="width:100%;height:300px;object-fit:cover;object-position:center 20%;display:block"
           />
-          <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(255,255,255,0.97) 100%);pointer-events:none"></div>
+          <div class="modal-hero-gradient" aria-hidden="true"></div>
+        </div>
 
-          ${myLog?.rating ? `<div style="position:absolute;top:14px;left:14px;background:var(--accent);color:#fff;font-size:10px;font-weight:800;letter-spacing:0.1em;padding:3px 10px;border-radius:5px;z-index:2">✓ LOGGED</div>` : ''}
-
+        ${(myLog?.rating || trailerKey) ? `
+        <div class="modal-hero-overlay">
+          ${myLog?.rating ? `<div class="modal-logged-badge">✓ LOGGED</div>` : ''}
           ${trailerKey ? `
           <button type="button" id="modal-trailer-btn" class="modal-trailer-btn" data-trailer-key="${SL.esc(trailerKey)}">
             <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445z"/></svg>
             Trailer
           </button>` : ''}
-        </div>
+        </div>` : ''}
 
         <!-- Body -->
         <div class="modal-body-overlap">
