@@ -425,7 +425,8 @@ Do NOT use markdown. Format your response exactly like this using HTML tags:
 <div style="margin-bottom:8px"><strong>Verdict:</strong> [1 sentence summary about our taste overlap using our actual names (${myName} and ${theirName})]</div>
 <div><strong>Details:</strong><br/>- [Reason 1 based on our shared or differing tastes]<br/>- [Reason 2 based on our shared or differing tastes]</div>`;
 
-        const aiResponse = await puter.ai.chat(prompt);
+        const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('AI Request Timeout')), 15000));
+        const aiResponse = await Promise.race([puter.ai.chat(prompt), timeout]);
         
         // Robust extraction
         if (typeof aiResponse === 'string') {

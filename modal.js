@@ -509,7 +509,8 @@ Do NOT use markdown in your response. Instead, format your response exactly with
 <div style="margin-bottom:8px"><strong>Why it fits:</strong> [1 sentence summary]</div>
 <div><strong>Reasons:</strong><br/>- [Reason 1 based on my history]<br/>- [Reason 2 based on my history]</div>`;
 
-        const aiResponse = await puter.ai.chat(prompt);
+        const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('AI Request Timeout')), 15000));
+        const aiResponse = await Promise.race([puter.ai.chat(prompt), timeout]);
         console.log("Puter AI Response:", aiResponse); // For debugging
         
         // Robust extraction
