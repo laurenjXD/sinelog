@@ -14,7 +14,7 @@ spec:
     type: RollingUpdate
     rollingUpdate:
       maxSurge: 1
-      maxUnavailable: 0          # Zero-downtime deploys
+      maxUnavailable: 0 # Zero-downtime deploys
   template:
     metadata:
       labels:
@@ -33,7 +33,7 @@ spec:
       containers:
         - name: sinelog
           image: sinelog:latest
-          imagePullPolicy: IfNotPresent   # Use Always when pulling from a remote registry
+          imagePullPolicy: IfNotPresent # Use Always when pulling from a remote registry
 
           ports:
             - name: http
@@ -55,10 +55,10 @@ spec:
           # ── Resource limits ────────────────────────────────────
           resources:
             requests:
-              cpu:    "50m"
+              cpu: "50m"
               memory: "64Mi"
             limits:
-              cpu:    "200m"
+              cpu: "200m"
               memory: "128Mi"
 
           # ── Health probes ──────────────────────────────────────
@@ -81,7 +81,7 @@ spec:
           # ── Security context ───────────────────────────────────
           securityContext:
             allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: false   # nginx needs to write tmp files
+            readOnlyRootFilesystem: false # nginx needs to write tmp files
             capabilities:
               drop: ["ALL"]
 
