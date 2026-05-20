@@ -16,7 +16,17 @@ SL.TMDB = (() => {
     // ── Discovery ──────────────────────────────────────────────
     trending:   (window='week', page=1) => request(`/trending/movie/${window}`, { page }),
     topRated:   (page=1)            => request('/movie/top_rated',    { page }),
-    nowPlaying: (page=1)            => request('/movie/now_playing',  { page }),
+    nowPlaying: (page=1) => {
+      const today = new Date().toISOString().slice(0, 10);
+      const past = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      return request('/discover/movie', {
+        page,
+        sort_by: 'popularity.desc',
+        'primary_release_date.gte': past,
+        'primary_release_date.lte': today,
+        'vote_count.gte': 5,
+      });
+    },
     upcoming:   (page=1)            => request('/movie/upcoming',     { page }),
     upcomingFuture: (page=1)        => request('/discover/movie', {
       page,
