@@ -1,58 +1,92 @@
 # SineLog
 
-SineLog is a premium, high-performance film diary and social discovery application. Built with a modern vanilla JavaScript architecture, it leverages **Supabase** for real-time backend services and **TMDB** for comprehensive film metadata.
+SineLog is a premium film diary and social discovery application. Built with a **vanilla JavaScript SPA** architecture, it uses **Supabase** for auth and data and **TMDB** for film metadata.
 
 > [!NOTE]
-> This project has recently undergone a major architecture overhaul, including full **Dockerization** and **Kubernetes** orchestration for production-grade scaling and reliability.
+> The project includes **Docker** and **Kubernetes** deployment for production-style hosting. See [DEPLOYMENT.md](DEPLOYMENT.md) for cluster demos and [PRESENTATION.md](PRESENTATION.md) for system and live-demo flows.
 
 ---
 
-## ✨ Key Features
+## Key Features
 
-### 🎬 Film Tracking & Discovery
-- **Rich Metadata**: Powered by TMDB, browse trending, top-rated, now-playing, and upcoming films.
-- **Advanced Search**: Instant global search for both films and fellow cinephiles.
-- **Log with Precision**: Track your watches with **half-star ratings**, detailed reviews, and **rewatch** indicators.
-- **Watchlist & Likes**: Maintain a curated list of films to watch and "like" your favorites.
+### Film tracking and discovery
+- **Rich metadata** from TMDB: trending, top-rated, now-playing, upcoming, genre browse
+- **Global search** for films and users (debounced navbar search)
+- **Log films** with half-star ratings, reviews, rewatch flag, spoiler flag, and watched date
+- **Watchlist** and per-film **like** toggle
+- **Trailer** button on the movie modal (YouTube, from TMDB videos)
 
-### 🤝 Social & Feed
-- **Activity Feed**: Stay updated with a live stream of what the community is watching and reviewing.
-- **Social Profiles**: Follow other users, compare film tastes, and explore their logged history.
-- **AI Taste Match**: Integrated Puter AI analysis to find "taste twins" based on viewing habits.
+### Social and feed
+- **Activity feed** of community logs and reviews
+- **Like / dislike** and **comments** on feed reviews
+- **Spoiler protection** — flagged reviews blur until revealed
+- **Profiles** with follow, stats, logs, likes, and watchlist tabs
+- **AI taste match** (Puter) — optional comparison to your watch history
 
-### 💎 Premium Design System
-- **Rich Aesthetics**: A modern "glassmorphism" UI with `backdrop-filter` effects and premium typography (Urbanist & BlurWeb).
-- **Responsive & Fluid**: Tailored experience across desktop and mobile, featuring smooth micro-animations and custom scrollbars.
-- **Interactive UX**: Debounced search, skeleton loaders, and instant toast notifications for a native-app feel.
+### Design and UX
+- Glassmorphism UI, responsive layout, custom modal scrollbars
+- Client-side router with **History API** deep links (`#home`, `#feed`, `#profile?…`)
+- Loaders, empty states, toasts, disabled states during saves
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
-- HTML, CSS, and vanilla JavaScript
-- Supabase Auth and Postgres
-- TMDB API
-- Puter AI script for optional taste analysis
-- Docker and Kubernetes files for deployment experiments
+| Layer | Technology |
+|-------|------------|
+| Frontend | HTML, CSS, vanilla JavaScript (`SL` namespace modules) |
+| Auth & DB | Supabase (Postgres + Row Level Security) |
+| Metadata | TMDB REST API |
+| AI (optional) | Puter.js |
+| Hosting | Nginx static server, Docker, Kubernetes |
+
+---
 
 ## Project Structure
 
-- `index.html` loads the SPA shell and scripts.
-- `app.js` contains configuration, router utilities, shared constants, formatting, and toast helpers.
-- `tmdb.js` wraps TMDB API calls.
-- `store.js` wraps Supabase database operations.
-- `modal.js` renders the movie detail and logging modal.
-- `nav.js` renders navigation and global search.
-- `ui/` contains page-level views: home, feed, profile, and browse.
-- `styles.css` contains the design system, responsive styles, modal styles, and reusable UI classes.
-- `supabase-schema.sql` contains the full schema for a new Supabase project.
+```
+sinelog/
+├── index.html          # SPA shell, script load order, bootstrap
+├── app.js              # Config, router, utilities, toast
+├── tmdb.js             # TMDB API wrapper
+├── auth.js             # Supabase Auth + auth panel UI
+├── store.js            # Supabase data access (logs, feed, social)
+├── nav.js              # Navbar + global search
+├── modal.js            # Movie detail modal, logging, taste match
+├── styles.css          # Design system and responsive layout
+├── ui/
+│   ├── home.js         # Discover / trending home
+│   ├── feed.js         # Activity feed + reactions
+│   ├── profile.js      # User profiles + taste match
+│   └── search-page.js  # Browse / genre discovery
+├── supabase-schema.sql
+├── supabase-migration-*.sql
+├── k8s/                # Kubernetes manifests
+├── Dockerfile
+└── docs (*.md)
+```
+
+---
+
+## Documentation
+
+| Document | Purpose |
+|----------|---------|
+| [PRESENTATION.md](PRESENTATION.md) | **System flow** and **demonstration flow** for presentations |
+| [system_design.md](system_design.md) | Architecture, data flows, infrastructure |
+| [javascript_research.md](javascript_research.md) | JavaScript modules, patterns, and APIs |
+| [research.md](research.md) | Database schema and Supabase usage |
+| [DEPLOYMENT.md](DEPLOYMENT.md) | Kubernetes build, deploy, and cluster demos |
+
+---
 
 ## Setup
 
-1. Create a Supabase project.
-2. Run `supabase-schema.sql` in the Supabase SQL editor for a fresh database.
-3. Create a TMDB API key.
-4. Add your keys in `app.js`:
+1. Create a [Supabase](https://supabase.com) project.
+2. Run `supabase-schema.sql` in the SQL editor (fresh project).
+3. Apply migrations as needed: spoilers, feed interactions, rewatch, half-star ratings (see [research.md](research.md)).
+4. Create a [TMDB](https://www.themoviedb.org/settings/api) API key.
+5. Configure keys in `app.js` for local dev, or via `env-config.js` when using Docker/K8s:
 
 ```js
 SL.CONFIG = {
@@ -62,32 +96,43 @@ SL.CONFIG = {
 };
 ```
 
-5. Open `index.html` in a browser, or serve the folder with a static web server.
+6. Serve the folder (e.g. `npx serve .`) or open through your deployed URL.
+
+---
 
 ## Demo Checklist
 
-Use this checklist before presenting:
+Before presenting, verify:
 
-- App loads without console syntax errors.
-- Home page displays trending rows and hero film.
-- Search finds a movie and opens the movie modal.
-- A user can sign up or sign in.
-- A signed-in user can log a film with rating, review, and watched date.
-- Updating an existing log preserves saved fields.
-- Watchlist add/remove shows a toast.
-- Feed loads recent logs.
-- Profile shows logged films, reviews, liked films, and watchlist.
-- Layout remains usable on desktop and mobile widths.
+- [ ] App loads with no console syntax errors
+- [ ] Home shows trending rows and hero film
+- [ ] Search opens the movie modal
+- [ ] Trailer opens YouTube in a new tab
+- [ ] Sign up / sign in works
+- [ ] Log film: rating, review, date, spoilers flag
+- [ ] Update existing log preserves fields
+- [ ] Watchlist toggle shows toast
+- [ ] Feed loads; like/dislike and comments work when signed in
+- [ ] Profile shows logs, reviews, likes, watchlist
+- [ ] Browser back/forward navigates SPA routes
+- [ ] Layout usable on desktop and mobile widths
+
+Full presenter script: [PRESENTATION.md § Demonstration Flow](PRESENTATION.md#3-demonstration-flow--live-presentation-script).
+
+---
 
 ## Known Limitations
 
-- AI Taste Match depends on the locally written script available.
-- The app uses a simple vanilla JavaScript router, so page URLs do not represent deep links.
+- AI taste match depends on Puter availability and prior logged films.
+- TMDB and Supabase keys must be configured; the app shows a setup screen if TMDB is missing.
+- Feed reactions and comments require the corresponding Supabase migrations.
+
+---
 
 ## Rubric Alignment
 
-- Core functionality: browsing, auth, logging, watchlist, feed, profile, and taste matching.
-- JavaScript logic: modular namespaces for router, store, TMDB API, modal, auth, nav, and page views.
-- UI: responsive modal, profile tabs, reusable buttons, and poster grids.
-- UX: loaders, empty states, toasts, disabled states during saves, auth prompts, and clear setup errors.
-- Code quality: separated files by responsibility, named helpers, schema/migration files, and this README.
+- **Functionality:** Browse, auth, logging, watchlist, feed, profile, social reactions, taste matching.
+- **JavaScript:** Modular `SL.*` namespaces, router, async fetch, DOM rendering, event handling.
+- **UI:** Responsive modal, profile tabs, poster grids, glass design system.
+- **UX:** Loaders, empty states, toasts, auth prompts, spoiler blur, debounced search.
+- **Code quality:** Files split by responsibility, SQL schema/migrations, documented flows.

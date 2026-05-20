@@ -1,102 +1,159 @@
 # SineLog — Database System Research
 
-This document provides a comprehensive breakdown of the SineLog database architecture, features, and utilization patterns. SineLog uses **Supabase** (Postgres) as its primary Backend-as-a-Service (BaaS), leveraging advanced SQL features like Row Level Security (RLS), Triggers, and Security-Invoker Views.
+Database architecture for SineLog: **Supabase (PostgreSQL)**, Row Level Security, views, triggers, and how the **JavaScript** layer (`store.js`) consumes them.
 
 ---
 
-## 🏗️ Core Schema Architecture
+## Core Schema Architecture
 
-### 1. `public.profiles`
-Extends the internal Supabase Auth system to store public-facing user data.
-- **ID**: `UUID` (Matches `auth.users.id`)
-- **Key Columns**: `username`, `display_name`, `bio`, `avatar_url`.
-- **Relationship**: Created automatically via a database trigger upon signup.
+### `public.profiles`
 
-### 2. `public.film_logs`
-The heart of the application. Stores every movie watch event.
-- **Columns**:
-  - `tmdb_id`: Integer reference to TMDB metadata.
-  - `rating`: `NUMERIC(2,1)` — Supports half-stars (e.g., 4.5).
-  - `is_rewatch`: `BOOLEAN` — Tracks if the movie has been seen before.
-  - `liked`: `BOOLEAN` — Personal "like" for the film.
-  - `review`: `TEXT` — The user's written thoughts.
-  - `watched_on`: `DATE` — When the user watched it.
-- **Constraint**: `UNIQUE(user_id, tmdb_id)` ensures only one log per movie per user (Upsert pattern).
+Extends Supabase Auth with public profile fields.
 
-### 3. `public.watchlist`
-Simple storage for movies users intend to watch.
-- **Columns**: `tmdb_id`, `movie_title`, `poster_path`.
-- **Logic**: Linked to profiles via `user_id`.
+| Column | Notes |
+|--------|--------|
+| `id` | UUID, matches `auth.users.id` |
+| `username`, `display_name`, `bio`, `avatar_url` | Shown in feed and profile UI |
 
-### 4. `public.follows`
-Enables the social graph.
-- **Columns**: `follower_id`, `following_id`.
-- **Constraint**: Self-following is blocked by a database-level `CHECK`.
+Created by trigger `handle_new_user()` on signup.
 
-### 5. `public.review_likes`
-Allows users to like reviews written by others in the `activity_feed`.
-- **Columns**: `user_id`, `log_id`.
+### `public.film_logs`
+
+Primary diary table — one row per user per film (`UNIQUE(user_id, tmdb_id)`).
+
+| Column | Type / role |
+|--------|-------------|
+| `tmdb_id` | TMDB movie id (integer) |
+| `movie_title`, `poster_path` | Cached for feed display |
+| `rating` | `NUMERIC(2,1)` — half-stars (e.g. 4.5) |
+| `review` | Free-text diary entry |
+| `liked` | User “heart” for the film |
+| `is_rewatch` | Rewatch indicator |
+| `has_spoilers` | Blur review in feed when true |
+| `watched_on` | Date watched |
+
+**JS access:** `SL.Store.logs.upsert()` in `modal.js` on Log Film.
+
+### `public.watchlist`
+
+Films the user intends to watch. Toggled from the modal via `SL.Store.watchlist.toggle()`.
+
+### `public.follows`
+
+Social graph (`follower_id`, `following_id`). Self-follow blocked by `CHECK` constraint.
+
+### `public.review_likes`
+
+Reactions on feed reviews.
+
+| Column | Notes |
+|--------|--------|
+| `reaction_type` | `'like'` or `'dislike'` |
+| `log_id` | References `film_logs.id` |
+
+**JS access:** `SL.Store.reactions.toggle(logId, type)` from `ui/feed.js`.
+
+### `public.review_comments`
+
+Threaded comments on a log/review.
+
+**JS access:** `SL.Store.comments.*` — list, add, update, delete (owner only via RLS).
 
 ---
 
-## 🧠 Advanced Database Features
+## Advanced Database Features
 
-### 🛡️ Row Level Security (RLS)
-Security is baked into the database layer, not just the frontend:
-- **Global Read**: All tables (except internal auth) have a `SELECT` policy allowing `true`. This enables public profiles and feeds.
-- **Owner-Only Write**: `INSERT`, `UPDATE`, and `DELETE` operations are restricted using `auth.uid() = user_id`.
+### Row Level Security (RLS)
 
-### ⚡ Automated Triggers
-- **`handle_new_user()`**: A PL/pgSQL function triggered `AFTER INSERT` on `auth.users`. It extracts metadata (username/avatar) and populates the `public.profiles` table instantly.
+- **SELECT:** Generally open for public social features (profiles, feed view).
+- **INSERT / UPDATE / DELETE:** `auth.uid() = user_id` (or equivalent) on owned rows.
 
-### 📊 Security-Invoker Views
-Views are used to simplify complex joins and aggregations while respecting RLS:
-- **`activity_feed`**: Joins `film_logs` with `profiles` and calculates `like_count`.
-- **`profile_stats`**: A high-performance view that calculates `films_logged`, `watchlist_count`, `followers_count`, and `following_count` in a single query.
+The JavaScript client sends the user JWT; Postgres enforces policy — no trust in client-only checks.
+
+### Triggers
+
+- **`handle_new_user()`** — After `auth.users` insert, creates matching `profiles` row from signup metadata.
+
+### Views (Security Invoker)
+
+| View | Purpose |
+|------|---------|
+| `activity_feed` | Joins logs + profiles; exposes `like_count`, `dislike_count`, `comment_count`, `has_spoilers` |
+| `profile_stats` | Aggregates films logged, likes, watchlist size, follower counts |
+
+Feed page JavaScript reads `activity_feed` only — no manual joins in the browser.
 
 ---
 
-## 🛠️ How to Utilize (Frontend API)
+## Frontend API (`store.js`)
 
-All database interactions are encapsulated in the `SL.Store` namespace within `store.js`.
+### Log a film
 
-### 1. Logging a Film
-```javascript
-await SL.Store.logs.upsert(tmdbId, "Inception", "/path.jpg", {
+```js
+await SL.Store.logs.upsert(tmdbId, movieTitle, posterPath, {
   rating: 4.5,
-  review: "Mind-bending!",
+  review: 'Mind-bending third act.',
   liked: true,
-  rewatch: false
+  rewatch: false,
+  hasSpoilers: false,
+  watchedOn: '2026-05-20',
 });
 ```
 
-### 2. Fetching the Activity Feed
-```javascript
-// Get global feed
-const feed = await SL.Store.feed.global(0, 20);
+### Activity feed
 
-// Get feed only from people you follow
-const followingFeed = await SL.Store.feed.following();
+```js
+const page = await SL.Store.feed.global(0, 20);
+const followingOnly = await SL.Store.feed.following(0, 20);
 ```
 
-### 3. Social Interactions
-```javascript
-// Toggle a follow
-await SL.Store.follows.toggle(targetUserId);
+### Social
 
-// Check if following
-const isFollowing = await SL.Store.follows.isFollowing(targetUserId);
+```js
+await SL.Store.follows.toggle(targetUserId);
+const following = await SL.Store.follows.isFollowing(targetUserId);
+await SL.Store.reactions.toggle(logId, 'like');
+const comments = await SL.Store.comments.list(logId);
 ```
 
 ---
 
-## 📋 Database Maintenance & Migrations
+## Migrations and Maintenance
 
-When making changes to the database, use the following migration files located in the root:
-1. `supabase-schema.sql`: The foundation. Run this first on new projects.
-2. `supabase-migration-rewatch.sql`: Adds rewatch columns to existing data.
-3. `supabase-migration-half-star-ratings.sql`: Converts integer ratings to decimals.
-4. `supabase-one-for-all-cleanup.sql`: A consolidated script to synchronize all tables and views to the latest version.
+Run on a **new** project:
 
-> [!TIP]
-> Always run the **One-For-All Cleanup** script if you notice the `activity_feed` or `profile_stats` views are missing columns after an update.
+1. `supabase-schema.sql` — base tables, RLS, core views
+
+Then apply as needed:
+
+| File | Adds |
+|------|------|
+| `supabase-migration-half-star-ratings.sql` | Decimal ratings |
+| `supabase-migration-rewatch.sql` | `is_rewatch` column |
+| `supabase-migration-spoilers.sql` | `has_spoilers`, updated `activity_feed` |
+| `supabase-migration-feed-interactions.sql` | Dislikes + `review_comments` |
+| `supabase-one-for-all-cleanup.sql` | Consolidated sync of views/columns |
+
+> If feed cards miss `dislike_count` or `has_spoilers`, re-run the latest migration or the one-for-all cleanup script.
+
+---
+
+## Data Flow: JavaScript to Postgres
+
+```mermaid
+flowchart LR
+    Modal[modal.js] --> Store[store.js]
+    Feed[feed.js] --> Store
+    Profile[profile.js] --> Store
+    Store --> SDK[Supabase JS Client]
+    SDK --> RLS[Postgres + RLS]
+    RLS --> Tables[(Tables / Views)]
+```
+
+---
+
+## Related Documentation
+
+- [javascript_research.md](javascript_research.md) — `SL.Store` method context
+- [system_design.md](system_design.md) — architecture overview
+- [PRESENTATION.md](PRESENTATION.md) — demo flows showing DB-backed features live

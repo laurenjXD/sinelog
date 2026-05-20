@@ -1,9 +1,11 @@
 # SineLog — Kubernetes Deployment Guide
 
 > **Course:** WPH University Elective — Introduction to Kubernetes
-> **Project:** SineLog (Movie & TV tracking web application)
+> **Project:** SineLog (film diary & social web application)
 > **Stack:** Static frontend (HTML/CSS/JS) · Nginx · Supabase · TMDB API
 > **Cluster:** Docker Desktop (local Kubernetes)
+
+**Application demo script (JavaScript flows):** [PRESENTATION.md](PRESENTATION.md)
 
 ---
 
@@ -43,8 +45,11 @@ sinelog/
 │   ├── hpa.yaml              # HorizontalPodAutoscaler (3–10 replicas)
 │   └── pdb.yaml              # PodDisruptionBudget (min 2 always up)
 ├── index.html
-├── app.js / auth.js / nav.js / modal.js / store.js / tmdb.js
-└── styles.css
+├── app.js              # Router, config, utilities
+├── auth.js / nav.js / modal.js / store.js / tmdb.js
+├── ui/                 # home, feed, profile, search-page
+├── styles.css
+└── *.md                # README, PRESENTATION, system_design, research
 ```
 
 ---
@@ -126,6 +131,16 @@ Open **http://localhost:8080** in your browser.
 
 > Keep this terminal open. The app will be accessible as long as port-forward is running.
 > Press `Ctrl+C` to stop.
+
+### Quick application smoke test (after port-forward)
+
+Before Kubernetes demos, confirm the **JavaScript app** works through Nginx:
+
+1. Home page loads trending films (TMDB key in Secret → `env-config.js`).
+2. Search → movie modal opens (`SL.Modal`).
+3. Sign in → log a film → appears on profile/feed (Supabase).
+
+Full presenter checklist: [PRESENTATION.md § Demonstration Flow](PRESENTATION.md#3-demonstration-flow--live-presentation-script).
 
 ---
 
