@@ -45,7 +45,11 @@ SL.Modal = (() => {
 
       selectedStar = myLog?.rating || 0;
 
-      const trailerKey = movie.videos?.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube')?.key;
+      const youtubeVideos = (movie.videos?.results || []).filter((v) => v.site === 'YouTube' && v.key);
+      const trailerKey =
+        youtubeVideos.find((v) => v.type === 'Trailer')?.key
+        || youtubeVideos.find((v) => v.type === 'Teaser')?.key
+        || youtubeVideos[0]?.key;
 
       sheet.innerHTML = `
         <button onclick="SL.Modal.close()" style="position:absolute;top:14px;right:14px;z-index:100;width:34px;height:34px;border-radius:8px;background:rgba(255,255,255,0.85);border:1px solid rgba(0,0,0,0.1);color:var(--text);display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(6px);box-shadow:0 4px 12px rgba(0,0,0,0.1)">
@@ -53,26 +57,25 @@ SL.Modal = (() => {
         </button>
         <div class="modal-scroll-content">
         <!-- Backdrop -->
-        <div style="position:relative">
+        <div class="modal-hero">
           <img id="modal-backdrop-img"
              src="${SL.img.backdrop(movie.backdrop_path) || SL.img.poster(movie.poster_path,'w780')}"
              alt="${SL.esc(movie.title)}"
              style="width:100%;height:300px;object-fit:cover;object-position:center 20%;display:block"
           />
-          <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(255,255,255,0.97) 100%)"></div>
+          <div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(255,255,255,0.97) 100%);pointer-events:none"></div>
 
-          ${myLog?.rating ? `<div style="position:absolute;top:14px;left:14px;background:var(--accent);color:#fff;font-size:10px;font-weight:800;letter-spacing:0.1em;padding:3px 10px;border-radius:5px">✓ LOGGED</div>` : ''}
+          ${myLog?.rating ? `<div style="position:absolute;top:14px;left:14px;background:var(--accent);color:#fff;font-size:10px;font-weight:800;letter-spacing:0.1em;padding:3px 10px;border-radius:5px;z-index:2">✓ LOGGED</div>` : ''}
 
           ${trailerKey ? `
-          <button onclick="window.open('https://www.youtube.com/watch?v=${trailerKey}','_blank')"
-            style="position:absolute;bottom:16px;right:16px;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.85);border:1px solid rgba(0,0,0,0.10);border-radius:8px;padding:7px 12px;color:var(--text);font-size:12px;font-weight:600;cursor:pointer;backdrop-filter:blur(6px);font-family:inherit">
+          <button type="button" id="modal-trailer-btn" class="modal-trailer-btn" data-trailer-key="${SL.esc(trailerKey)}">
             <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16"><path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/><path d="M6.271 5.055a.5.5 0 0 1 .52.038l3.5 2.5a.5.5 0 0 1 0 .814l-3.5 2.5A.5.5 0 0 1 6 10.5v-5a.5.5 0 0 1 .271-.445z"/></svg>
             Trailer
           </button>` : ''}
         </div>
 
         <!-- Body -->
-        <div style="padding:0 24px 32px;margin-top:-40px;position:relative">
+        <div class="modal-body-overlap">
           <div style="display:flex;gap:18px;align-items:flex-end;margin-bottom:20px">
 
             <!-- Poster -->
@@ -233,6 +236,13 @@ SL.Modal = (() => {
         </div>
         </div>
       `;
+
+      document.getElementById('modal-trailer-btn')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const key = e.currentTarget.dataset.trailerKey;
+        if (!key) return;
+        window.open(`https://www.youtube.com/watch?v=${encodeURIComponent(key)}`, '_blank', 'noopener,noreferrer');
+      });
 
       // ── Star interactions ─────────────────────────────────────
       const starBtns = sheet.querySelectorAll('.rating-star');

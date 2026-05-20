@@ -1016,6 +1016,42 @@ textarea.input {
   background-clip: content-box;
 }
 
+/* Body overlaps hero; transparent area must not block trailer / hero controls */
+.modal-hero {
+  position: relative;
+}
+
+.modal-trailer-btn {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 7px 12px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  font-family: inherit;
+}
+
+.modal-body-overlap {
+  margin-top: -40px;
+  position: relative;
+  padding: 0 24px 32px;
+  pointer-events: none;
+}
+
+.modal-body-overlap > * {
+  pointer-events: auto;
+}
+
 .modal-cast-actions {
   display: inline-flex;
   gap: 6px;
