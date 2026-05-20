@@ -20,6 +20,7 @@ The heart of the application. Stores every movie watch event.
   - `is_rewatch`: `BOOLEAN` — Tracks if the movie has been seen before.
   - `liked`: `BOOLEAN` — Personal "like" for the film.
   - `review`: `TEXT` — The user's written thoughts.
+  - `has_spoilers`: `BOOLEAN` — Flags if the review contains spoilers.
   - `watched_on`: `DATE` — When the user watched it.
 - **Constraint**: `UNIQUE(user_id, tmdb_id)` ensures only one log per movie per user (Upsert pattern).
 
@@ -34,8 +35,13 @@ Enables the social graph.
 - **Constraint**: Self-following is blocked by a database-level `CHECK`.
 
 ### 5. `public.review_likes`
-Allows users to like reviews written by others in the `activity_feed`.
-- **Columns**: `user_id`, `log_id`.
+Allows users to react to reviews written by others in the `activity_feed`.
+- **Columns**: `user_id`, `log_id`, `reaction_type`.
+- **Reaction Types**: 'like' (thumbs up), 'dislike' (thumbs down).
+
+### 6. `public.review_comments`
+Enables nested discussions on individual film logs.
+- **Columns**: `id`, `user_id`, `log_id`, `comment_text`, `created_at`.
 
 ---
 
@@ -51,7 +57,7 @@ Security is baked into the database layer, not just the frontend:
 
 ### 📊 Security-Invoker Views
 Views are used to simplify complex joins and aggregations while respecting RLS:
-- **`activity_feed`**: Joins `film_logs` with `profiles` and calculates `like_count`.
+- **`activity_feed`**: Joins `film_logs` with `profiles` and calculates `like_count`, `dislike_count`, and `comment_count`.
 - **`profile_stats`**: A high-performance view that calculates `films_logged`, `watchlist_count`, `followers_count`, and `following_count` in a single query.
 
 ---
@@ -96,7 +102,9 @@ When making changes to the database, use the following migration files located i
 1. `supabase-schema.sql`: The foundation. Run this first on new projects.
 2. `supabase-migration-rewatch.sql`: Adds rewatch columns to existing data.
 3. `supabase-migration-half-star-ratings.sql`: Converts integer ratings to decimals.
-4. `supabase-one-for-all-cleanup.sql`: A consolidated script to synchronize all tables and views to the latest version.
+4. `supabase-migration-feed-interactions.sql`: Adds thumbs up/down reactions and comments.
+5. `supabase-migration-spoilers.sql`: Adds the `has_spoilers` boolean and updates views.
+6. `supabase-one-for-all-cleanup.sql`: A consolidated script to synchronize all tables and views to the latest version.
 
 > [!TIP]
 > Always run the **One-For-All Cleanup** script if you notice the `activity_feed` or `profile_stats` views are missing columns after an update.

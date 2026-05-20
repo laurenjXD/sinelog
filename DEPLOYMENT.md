@@ -260,8 +260,13 @@ deployment "sinelog" successfully rolled out
 
 ## Cleanup
 
+### 1. Delete Kubernetes Resources
+
 ```powershell
-# Delete all sinelog namespace resources
+# Delete all resources created by manifests in the k8s directory
+kubectl delete -f k8s/
+
+# Or delete the namespace directly (cascades to all resources inside it)
 kubectl delete namespace sinelog
 
 # Delete the PersistentVolume (cluster-scoped, must delete separately)
@@ -270,6 +275,24 @@ kubectl delete pv sinelog-logs-pv
 # Confirm everything is gone
 kubectl get all -n sinelog
 kubectl get pv
+```
+
+### 2. Delete Docker Containers and Images
+
+If you want to completely clean up your Docker environment and free up space:
+
+```powershell
+# The Quickest Way (Delete ALL stopped containers, unused networks, and images)
+docker system prune -a --volumes
+
+# Or delete specific images created during this deployment
+docker rmi sinelog:latest
+docker rmi sinelog:v1.0.0
+docker rmi sinelog:v2.0.0
+
+# To force delete all containers and images manually (PowerShell)
+docker rm -f $(docker ps -aq)
+docker rmi -f $(docker images -q)
 ```
 
 ---

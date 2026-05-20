@@ -176,8 +176,19 @@ SL.Modal = (() => {
               </button>
             </div>
 
+            <!-- Review diary prompts -->
+            <div id="review-prompts-wrap" class="review-prompts">
+              <div class="review-prompts-header">
+                <span class="review-prompts-title">Journal prompts</span>
+                <button type="button" id="review-prompts-toggle" class="review-prompts-skip">Just write</button>
+              </div>
+              <p class="review-prompts-lead">Optional — tap a topic to add it to your diary entry.</p>
+              <div id="review-prompt-chips" class="review-prompt-chips"></div>
+              <p id="review-prompt-active-hint" class="review-prompt-active-hint" hidden></p>
+            </div>
+
             <!-- Review -->
-            <textarea id="review-input" class="input" placeholder="Write your thoughts on this film…" rows="3"
+            <textarea id="review-input" class="input" placeholder="Write your thoughts on this film…" rows="4"
               style="margin-bottom:8px">${SL.esc(myLog?.review || '')}</textarea>
               
             <!-- Spoilers toggle -->
@@ -285,6 +296,11 @@ SL.Modal = (() => {
         btn.childNodes[btn.childNodes.length-1].textContent = isLiked ? ' Liked' : ' Like this film';
       });
 
+      const reviewPrompts = SL.ReviewPrompts?.mount(sheet, movie, {
+        isRewatch,
+        credits,
+      });
+
       document.getElementById('rewatch-toggle')?.addEventListener('click', async () => {
         isRewatch = !isRewatch;
         const btn = document.getElementById('rewatch-toggle');
@@ -292,6 +308,7 @@ SL.Modal = (() => {
         btn.style.borderColor = isRewatch ? 'rgba(var(--accent-rgb),0.45)' : '';
         btn.style.background = isRewatch ? 'var(--accent-dim)' : '';
         btn.childNodes[btn.childNodes.length-1].textContent = isRewatch ? ' Rewatch' : ' Mark rewatch';
+        reviewPrompts?.refresh(isRewatch);
       });
 
       document.getElementById('log-btn')?.addEventListener('click', async () => {
