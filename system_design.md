@@ -35,9 +35,9 @@ graph TD
 The frontend is built with **Vanilla JavaScript** using a modular "Namespace" architecture (`SL`).
 
 - **Architecture**: Single Page Application (SPA).
-- **Routing**: Client-side router that dynamically mounts views into an `#app` shell, fully integrated with the browser's History API for deep linking and back-button support.
+- **Routing**: Client-side router that dynamically mounts views into an `#app` shell.
 - **State Management**: Distributed across modules (`SL.Auth` for user state, `SL.Store` for database cache).
-- **Styling**: Modern CSS3 with **Glassmorphism** aesthetics, utilizing `backdrop-filter`, CSS Variables, and Dynamic Viewport Units (`dvh`) for a consistent, responsive design system.
+- **Styling**: Modern CSS3 with **Glassmorphism** aesthetics, utilizing `backdrop-filter` and CSS Variables for a consistent design system.
 
 ---
 
@@ -53,7 +53,7 @@ Instead of a middle-tier API server, SineLog uses **RLS** directly in Postgres.
 ### 2. Relational Schema
 The database is structured to support social features:
 - **One-to-Many**: One user to many film logs.
-- **Many-to-Many**: Following system, thumbs up/down review reactions, and nested review comments.
+- **Many-to-Many**: Following system and review likes.
 - **Computed Views**: `profile_stats` and `activity_feed` are used for performant data retrieval with pre-joined metadata.
 
 ---
@@ -64,7 +64,7 @@ The database is structured to support social features:
 1. **User Action**: User clicks "Log" in the Movie Modal.
 2. **Logic Layer**: `modal.js` calls `SL.Store.logs.upsert()`.
 3. **Auth Check**: `SL.Store` verifies the user session via `SL.Auth`.
-4. **Database Entry**: An `UPSERT` command is sent to Supabase (including metadata like ratings, reviews, and spoiler flags).
+4. **Database Entry**: An `UPSERT` command is sent to Supabase.
 5. **Trigger**: If it's a new user, a Postgres Trigger handles profile creation.
 6. **UI Update**: `SL.toast` notifies success, and the view is re-rendered to show the new "Logged" status.
 

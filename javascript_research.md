@@ -10,7 +10,7 @@ The entire application is contained within `window.SL`. This ensures that all co
 
 ### 1. `app.js` (The Backbone)
 The application shell and core utilities:
-- **Router**: A custom client-side router (`SL.Router`) that integrates fully with the browser's native History API (`pushState` / `popstate`), ensuring deep linking and back-button functionality work seamlessly across the SPA.
+- **Router**: A custom client-side router (`SL.Router`) that handles view transitions without page reloads.
 - **Config**: Manages API keys (TMDB, Supabase) and base URLs.
 - **Helpers**: 
   - `SL.img`: Generates TMDB image URLs with fallback posters.
@@ -43,7 +43,6 @@ The Database Access Layer (DAL):
 The global navigation component:
 - **Active States**: Automatically highlights the current page link.
 - **Global Search**: Features a debounced search input that finds both movies and users in real-time.
-- **Mobile Dropdown**: Manages the glassmorphism hamburger menu and profile avatars across responsive viewports.
 
 ---
 
@@ -57,8 +56,8 @@ Each page (Home, Feed, Profile, Browse) is a standalone module registered with t
 ### The Movie Modal (`modal.js`)
 The most complex UI component in the app:
 - **Stateful**: Manages the "Log" vs "Detail" view states.
-- **Dynamic & Responsive**: Utilizes sticky exit buttons and dynamic viewport height (`dvh`) units to ensure flawless rendering across mobile screens without bottom-bar cutoff.
-- **Interactive**: Handles star-rating selections, spoiler toggles, rewatch flags, and review submissions.
+- **Dynamic**: Changes its layout based on whether the user is authenticated or has already logged the film.
+- **Interactive**: Handles star-rating selections, rewatch toggles, and review submissions.
 
 ---
 

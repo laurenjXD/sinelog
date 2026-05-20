@@ -17,16 +17,13 @@ SineLog is a premium, high-performance film diary and social discovery applicati
 
 ### 🤝 Social & Feed
 - **Activity Feed**: Stay updated with a live stream of what the community is watching and reviewing.
-- **Interactions**: Upvote, downvote, and comment directly on community reviews.
-- **Spoiler Protection**: Flag reviews with spoilers, automatically blurring them for others.
 - **Social Profiles**: Follow other users, compare film tastes, and explore their logged history.
 - **AI Taste Match**: Integrated Puter AI analysis to find "taste twins" based on viewing habits.
 
 ### 💎 Premium Design System
 - **Rich Aesthetics**: A modern "glassmorphism" UI with `backdrop-filter` effects and premium typography (Urbanist & BlurWeb).
-- **Responsive & Fluid**: Tailored experience across desktop and mobile, featuring glassmorphism mobile dropdowns and dynamic sticky modals.
+- **Responsive & Fluid**: Tailored experience across desktop and mobile, featuring smooth micro-animations and custom scrollbars.
 - **Interactive UX**: Debounced search, skeleton loaders, and instant toast notifications for a native-app feel.
-- **Deep Linking**: Full browser History API integration allowing the back-button to work properly across the SPA.
 
 ---
 
@@ -76,7 +73,6 @@ Use this checklist before presenting:
 - Search finds a movie and opens the movie modal.
 - A user can sign up or sign in.
 - A signed-in user can log a film with rating, review, and watched date.
-- Journal prompts appear in the log modal; tapping a topic inserts it into the review field (optional).
 - Updating an existing log preserves saved fields.
 - Watchlist add/remove shows a toast.
 - Feed loads recent logs.
@@ -86,6 +82,7 @@ Use this checklist before presenting:
 ## Known Limitations
 
 - AI Taste Match depends on the locally written script available.
+- The app uses a simple vanilla JavaScript router, so page URLs do not represent deep links.
 
 ## Rubric Alignment
 
