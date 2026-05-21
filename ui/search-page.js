@@ -232,8 +232,10 @@ SL.Router.register('search-page', async (container, params) => {
         <span style="margin-left:10px">Loading more films...</span>
       </div>
       <div id="search-sentinel" style="height:1px"></div>
-      <button id="browse-scroll-top" class="scroll-top-btn" type="button" aria-label="Scroll to top">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></svg>
+      <!-- Scroll to Top Button -->
+      <button id="search-scroll-top-btn" title="Scroll to top"
+        style="position:fixed;bottom:24px;right:24px;width:48px;height:48px;border-radius:50%;background:var(--accent);color:#fff;border:none;box-shadow:0 4px 12px rgba(99, 102, 241, 0.4);cursor:pointer;display:none;align-items:center;justify-content:center;z-index:90;transition:opacity 0.2s, transform 0.2s;opacity:0;transform:translateY(10px)">
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M18 15l-6-6-6 6"/></svg>
       </button>
     </div>
   `;
@@ -327,12 +329,35 @@ SL.Router.register('search-page', async (container, params) => {
   }, { threshold: 0.1 });
   if (sentinel) observer.observe(sentinel);
 
-  const scrollTopBtn = document.getElementById('browse-scroll-top');
-  const toggleScrollTop = () => {
-    if (SL.Router.current() !== 'search-page') return;
-    scrollTopBtn?.classList.toggle('visible', window.scrollY > 420);
-  };
-  scrollTopBtn?.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
-  window.addEventListener('scroll', toggleScrollTop, { passive: true });
-  toggleScrollTop();
+  // Scroll to Top Logic
+  const topBtn = document.getElementById('search-scroll-top-btn');
+  if (topBtn) {
+    topBtn.addEventListener('click', () => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    const handleScroll = () => {
+      if (!document.getElementById('search-scroll-top-btn')) {
+        window.removeEventListener('scroll', handleScroll);
+        return;
+      }
+      if (window.scrollY > 500) {
+        topBtn.style.display = 'flex';
+        // small delay for transition
+        setTimeout(() => {
+          topBtn.style.opacity = '1';
+          topBtn.style.transform = 'translateY(0)';
+        }, 10);
+      } else {
+        topBtn.style.opacity = '0';
+        topBtn.style.transform = 'translateY(10px)';
+        setTimeout(() => {
+          if (window.scrollY <= 500 && topBtn) topBtn.style.display = 'none';
+        }, 200);
+      }
+    };
+    
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); // Check initial state
+  }
 });
