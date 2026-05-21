@@ -19,6 +19,7 @@ SL.Router.register('profile', async (container, params) => {
   const isOwnProfile = targetId === SL.Auth.uid();
   let activeTab = 'films';
   let profile, isFollowing;
+  let tabState = { page: 0, hasMore: true, loading: false };
 
   function filmVisual(log, posterSize = 'w342') {
     return `<img src="${SL.img.poster(log.poster_path, posterSize)}" loading="lazy" alt="${SL.esc(log.movie_title || 'Film poster')}"
@@ -44,101 +45,121 @@ SL.Router.register('profile', async (container, params) => {
     return;
   }
 
-  async function renderTab() {
+  async function renderTab(append = false) {
     const tabContent = document.getElementById('profile-tab-content');
+    const loadMoreBtn = document.getElementById('profile-load-more-btn');
     if (!tabContent) return;
-    tabContent.innerHTML = `<div class="loading-state"><div class="spinner" style="width:28px;height:28px"></div><div>Loading this section...</div></div>`;
+    
+    if (!append) {
+      tabContent.innerHTML = `<div class="loading-state"><div class="spinner" style="width:28px;height:28px"></div><div>Loading this section...</div></div>`;
+      if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+      tabState.page = 0;
+      tabState.hasMore = true;
+    }
+    
+    if (tabState.loading || !tabState.hasMore) return;
+    tabState.loading = true;
+    if (loadMoreBtn) loadMoreBtn.style.display = 'none';
 
     try {
+      const pageSize = 40;
+      let newHtml = '';
+      let items = [];
+
       if (activeTab === 'films') {
-        const logs = await SL.Store.logs.getForUser(targetId, 0, 40);
-        if (!logs.length) {
-          tabContent.innerHTML = `<div class="empty-state" style="padding:40px 0"><div class="empty-state-icon">🎬</div><div class="empty-state-title">No films logged yet</div><div class="empty-state-text">Logged films will appear here.</div></div>`;
-          return;
-        }
-        tabContent.innerHTML = `
-          <div class="poster-grid">
-            ${logs.map(l => `
-              <div class="movie-card" onclick="SL.Modal.open(${l.tmdb_id})">
-                <div class="movie-poster-frame">
-                  ${filmVisual(l)}
-                  ${l.rating ? `<div class="profile-rating-strip">
-                    ${SL.ratingText(l.rating)}
-                  </div>` : ''}
-                  ${l.is_rewatch ? `<div class="rewatch-poster-badge">Rewatch</div>` : ''}
-                </div>
-                <p class="profile-poster-title">${SL.esc(l.movie_title)}</p>
+        items = await SL.Store.logs.getForUser(targetId, tabState.page, pageSize);
+        if (items.length < pageSize) tabState.hasMore = false;
+        if (!items.length && tabState.page === 0) {
+          newHtml = `<div class="empty-state" style="padding:40px 0"><div class="empty-state-icon">🎬</div><div class="empty-state-title">No films logged yet</div><div class="empty-state-text">Logged films will appear here.</div></div>`;
+        } else {
+          newHtml = items.map(l => `
+            <div class="movie-card" onclick="SL.Modal.open(${l.tmdb_id})">
+              <div class="movie-poster-frame">
+                ${filmVisual(l)}
+                ${l.rating ? `<div class="profile-rating-strip">${SL.ratingText(l.rating)}</div>` : ''}
+                ${l.is_rewatch ? `<div class="rewatch-poster-badge">Rewatch</div>` : ''}
               </div>
-            `).join('')}
-          </div>
-        `;
-      } else if (activeTab === 'watchlist') {
-        const items = await SL.Store.watchlist.getForUser(targetId);
-        if (!items.length) {
-          tabContent.innerHTML = `<div class="empty-state" style="padding:40px 0"><div class="empty-state-icon">📋</div><div class="empty-state-title">Watchlist is empty</div><div class="empty-state-text">Films saved for later will appear here.</div></div>`;
-          return;
-        }
-        tabContent.innerHTML = `
-          <div class="poster-grid">
-            ${items.map(l => `
-              <div class="movie-card" onclick="SL.Modal.open(${l.tmdb_id})">
-                <div class="movie-poster-frame">
-                  ${filmVisual(l)}
-                </div>
-                <p class="profile-poster-title">${SL.esc(l.movie_title)}</p>
-              </div>
-            `).join('')}
-          </div>
-        `;
-      } else if (activeTab === 'liked') {
-        const logs = await SL.Store.logs.getForUser(targetId, 0, 60);
-        const liked = logs.filter(l => l.liked);
-        if (!liked.length) {
-          tabContent.innerHTML = `<div class="empty-state" style="padding:40px 0"><div class="empty-state-icon">❤️</div><div class="empty-state-title">No liked films yet</div><div class="empty-state-text">Liked films will appear here.</div></div>`;
-          return;
-        }
-        tabContent.innerHTML = `
-          <div class="poster-grid">
-            ${liked.map(l => `
-              <div class="movie-card" onclick="SL.Modal.open(${l.tmdb_id})">
-                <div class="movie-poster-frame">
-                  <img src="${SL.img.poster(l.poster_path,'w342')}" loading="lazy"
-                    class="movie-card-poster" />
-                  <div class="movie-card-rating">♥</div>
-                </div>
-                <p class="profile-poster-title">${SL.esc(l.movie_title)}</p>
-              </div>
-            `).join('')}
-          </div>
-        `;
-      } else if (activeTab === 'reviews') {
-        const logs = await SL.Store.logs.getForUser(targetId, 0, 40);
-        const reviews = logs.filter(l => l.review);
-        if (!reviews.length) {
-          tabContent.innerHTML = `<div class="empty-state" style="padding:40px 0"><div class="empty-state-icon">✍️</div><div class="empty-state-title">No reviews written yet</div><div class="empty-state-text">Reviews will appear here after films are logged with notes.</div></div>`;
-          return;
-        }
-        tabContent.innerHTML = reviews.map(r => `
-          <div style="display:flex;gap:14px;padding:16px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="SL.Modal.open(${r.tmdb_id})">
-            <img src="${SL.img.poster(r.poster_path,'w185')}" alt="${SL.esc(r.movie_title)} poster"
-              style="width:50px;aspect-ratio:2/3;object-fit:cover;border-radius:7px;border:1px solid var(--border);flex-shrink:0" />
-            <div style="min-width:0">
-              <p style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px">${SL.esc(r.movie_title)}</p>
-              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
-                ${r.rating ? `<span style="font-size:13px;color:var(--accent)">${SL.ratingStars(r.rating)} ${SL.ratingText(r.rating)}</span>` : ''}
-                ${r.is_rewatch ? `<span class="rewatch-badge">Rewatch</span>` : ''}
-              </div>
-              <div style="margin-top:6px">
-                ${r.has_spoilers ? `<span class="spoiler-warning" onclick="event.stopPropagation(); this.nextElementSibling.classList.toggle('revealed')">⚠️ Contains Spoilers — Click to reveal</span>` : ''}
-                <p style="font-size:13px;color:var(--ghost);line-height:1.65" class="${r.has_spoilers ? 'review-spoilers' : ''}" ${r.has_spoilers ? `onclick="event.stopPropagation(); this.classList.toggle('revealed')"` : ''}>${SL.esc(r.review)}</p>
-              </div>
-              <p style="font-size:11px;color:var(--mist);margin-top:6px">${SL.fmt.date(r.created_at)}</p>
+              <p class="profile-poster-title">${SL.esc(l.movie_title)}</p>
             </div>
-          </div>
-        `).join('');
+          `).join('');
+          if (!append) newHtml = `<div class="poster-grid">${newHtml}</div>`;
+        }
+      } else if (activeTab === 'watchlist') {
+        items = await SL.Store.watchlist.getForUser(targetId, tabState.page, pageSize);
+        if (items.length < pageSize) tabState.hasMore = false;
+        if (!items.length && tabState.page === 0) {
+          newHtml = `<div class="empty-state" style="padding:40px 0"><div class="empty-state-icon">📋</div><div class="empty-state-title">Watchlist is empty</div><div class="empty-state-text">Films saved for later will appear here.</div></div>`;
+        } else {
+          newHtml = items.map(l => `
+            <div class="movie-card" onclick="SL.Modal.open(${l.tmdb_id})">
+              <div class="movie-poster-frame">${filmVisual(l)}</div>
+              <p class="profile-poster-title">${SL.esc(l.movie_title)}</p>
+            </div>
+          `).join('');
+          if (!append) newHtml = `<div class="poster-grid">${newHtml}</div>`;
+        }
+      } else if (activeTab === 'liked') {
+        items = await SL.Store.logs.getLikedForUser(targetId, tabState.page, pageSize);
+        if (items.length < pageSize) tabState.hasMore = false;
+        if (!items.length && tabState.page === 0) {
+          newHtml = `<div class="empty-state" style="padding:40px 0"><div class="empty-state-icon">❤️</div><div class="empty-state-title">No liked films yet</div><div class="empty-state-text">Liked films will appear here.</div></div>`;
+        } else {
+          newHtml = items.map(l => `
+            <div class="movie-card" onclick="SL.Modal.open(${l.tmdb_id})">
+              <div class="movie-poster-frame">
+                <img src="${SL.img.poster(l.poster_path,'w342')}" loading="lazy" class="movie-card-poster" />
+                <div class="movie-card-rating">♥</div>
+              </div>
+              <p class="profile-poster-title">${SL.esc(l.movie_title)}</p>
+            </div>
+          `).join('');
+          if (!append) newHtml = `<div class="poster-grid">${newHtml}</div>`;
+        }
+      } else if (activeTab === 'reviews') {
+        items = await SL.Store.logs.getReviewsForUser(targetId, tabState.page, pageSize);
+        if (items.length < pageSize) tabState.hasMore = false;
+        if (!items.length && tabState.page === 0) {
+          newHtml = `<div class="empty-state" style="padding:40px 0"><div class="empty-state-icon">✍️</div><div class="empty-state-title">No reviews written yet</div><div class="empty-state-text">Reviews will appear here after films are logged with notes.</div></div>`;
+        } else {
+          newHtml = items.map(r => `
+            <div style="display:flex;gap:14px;padding:16px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="SL.Modal.open(${r.tmdb_id})">
+              <img src="${SL.img.poster(r.poster_path,'w185')}" alt="${SL.esc(r.movie_title)} poster"
+                style="width:50px;aspect-ratio:2/3;object-fit:cover;border-radius:7px;border:1px solid var(--border);flex-shrink:0" />
+              <div style="min-width:0">
+                <p style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px">${SL.esc(r.movie_title)}</p>
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+                  ${r.rating ? `<span style="font-size:13px;color:var(--accent)">${SL.ratingStars(r.rating)} ${SL.ratingText(r.rating)}</span>` : ''}
+                  ${r.is_rewatch ? `<span class="rewatch-badge">Rewatch</span>` : ''}
+                </div>
+                <div style="margin-top:6px">
+                  ${r.has_spoilers ? `<span class="spoiler-warning" onclick="event.stopPropagation(); this.nextElementSibling.classList.toggle('revealed')">⚠️ Contains Spoilers — Click to reveal</span>` : ''}
+                  <p style="font-size:13px;color:var(--ghost);line-height:1.65" class="${r.has_spoilers ? 'review-spoilers' : ''}" ${r.has_spoilers ? `onclick="event.stopPropagation(); this.classList.toggle('revealed')"` : ''}>${SL.esc(r.review)}</p>
+                </div>
+                <p style="font-size:11px;color:var(--mist);margin-top:6px">${SL.fmt.date(r.created_at)}</p>
+              </div>
+            </div>
+          `).join('');
+          if (!append) newHtml = `<div class="reviews-list">${newHtml}</div>`;
+        }
       }
+
+      if (!append) {
+        tabContent.innerHTML = newHtml;
+      } else if (items.length) {
+        const container = tabContent.firstElementChild;
+        if (container) container.insertAdjacentHTML('beforeend', newHtml);
+      }
+      tabState.page++;
+
     } catch(e) {
-      tabContent.innerHTML = `<div class="empty-state" style="padding:40px 0"><div class="empty-state-icon">⚠️</div><div class="empty-state-title">Failed to load</div><div class="empty-state-text">This section could not be loaded right now.</div></div>`;
+      if (!append) {
+        tabContent.innerHTML = `<div class="empty-state" style="padding:40px 0"><div class="empty-state-icon">⚠️</div><div class="empty-state-title">Failed to load</div><div class="empty-state-text">This section could not be loaded right now.</div></div>`;
+      }
+    } finally {
+      tabState.loading = false;
+      if (loadMoreBtn && tabState.hasMore) {
+        loadMoreBtn.style.display = 'inline-flex';
+      }
     }
   }
 
@@ -331,6 +352,11 @@ SL.Router.register('profile', async (container, params) => {
 
       <!-- Tab content -->
       <div id="profile-tab-content"></div>
+      
+      <!-- Load More Button -->
+      <div style="text-align:center; padding:20px 0;">
+        <button id="profile-load-more-btn" class="btn btn-ghost" style="display:none;margin:0 auto;border-radius:20px;padding:8px 24px" onclick="if(window.loadProfileTab) window.loadProfileTab()">Load More</button>
+      </div>
 
     </div>
 
@@ -378,6 +404,7 @@ SL.Router.register('profile', async (container, params) => {
 
   // Global handlers
   window.switchProfileTab = switchTab;
+  window.loadProfileTab = () => renderTab(true);
 
   window.calculateCompatibility = async () => {
     if (!SL.Auth.isAuthed()) { SL.AuthPanel.open(); return; }

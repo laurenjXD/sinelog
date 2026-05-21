@@ -214,7 +214,9 @@ SL.Router.register('feed', async (container, params) => {
     if (loading || !hasMore) return;
     loading = true;
     const loader = document.getElementById('feed-loader');
+    const loadMoreBtn = document.getElementById('feed-load-more-btn');
     if (loader) loader.style.display = 'flex';
+    if (loadMoreBtn) loadMoreBtn.style.display = 'none';
 
     try {
       let entries;
@@ -361,6 +363,10 @@ SL.Router.register('feed', async (container, params) => {
     } finally {
       loading = false;
       if (loader) loader.style.display = 'none';
+      const loadMoreBtn = document.getElementById('feed-load-more-btn');
+      if (loadMoreBtn && hasMore && page > 0) {
+        loadMoreBtn.style.display = 'inline-flex';
+      }
     }
   }
 
@@ -390,8 +396,17 @@ SL.Router.register('feed', async (container, params) => {
           <div class="spinner" style="width:24px;height:24px"></div>
           <span style="margin-left:10px;color:var(--mist);font-size:13px">Loading more activity...</span>
         </div>
+        
+        <!-- Load More Button -->
+        <div style="text-align:center; padding:20px 0 40px;">
+          <button id="feed-load-more-btn" class="btn btn-ghost" style="display:none;margin:0 auto;border-radius:20px;padding:8px 24px" onclick="if(window.loadFeedPage) window.loadFeedPage()">Load More Activity</button>
+        </div>
       </div>
     `;
+
+    window.loadFeedPage = () => {
+      if (!loading && hasMore) loadPage();
+    };
 
     window.switchTab = (tab) => {
       activeTab = tab;
@@ -408,12 +423,6 @@ SL.Router.register('feed', async (container, params) => {
 
     document.getElementById('feed-list').innerHTML = skeleton();
     loadPage();
-
-    // Infinite scroll
-    const observer = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting) loadPage();
-    }, { threshold: 0.1 });
-    observer.observe(document.getElementById('feed-loader'));
   }
 
   render();

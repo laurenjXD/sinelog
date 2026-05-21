@@ -53,6 +53,31 @@ SL.Store = (() => {
       return data || [];
     },
 
+    async getLikedForUser(userId, page=0, pageSize=20) {
+      const from = page * pageSize;
+      const { data, error } = await sb().from('film_logs')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('liked', true)
+        .order('created_at', { ascending: false })
+        .range(from, from + pageSize - 1);
+      if (error) throw error;
+      return data || [];
+    },
+
+    async getReviewsForUser(userId, page=0, pageSize=20) {
+      const from = page * pageSize;
+      const { data, error } = await sb().from('film_logs')
+        .select('*')
+        .eq('user_id', userId)
+        .not('review', 'is', null)
+        .not('review', 'eq', '')
+        .order('created_at', { ascending: false })
+        .range(from, from + pageSize - 1);
+      if (error) throw error;
+      return data || [];
+    },
+
     async getMyLog(tmdbId) {
       const uid = SL.Auth.uid();
       if (!uid) return null;
@@ -98,9 +123,13 @@ SL.Store = (() => {
       return !!data;
     },
 
-    async getForUser(userId) {
+    async getForUser(userId, page=0, pageSize=40) {
+      const from = page * pageSize;
       const { data, error } = await sb().from('watchlist')
-        .select('*').eq('user_id', userId).order('added_at', { ascending: false });
+        .select('*')
+        .eq('user_id', userId)
+        .order('added_at', { ascending: false })
+        .range(from, from + pageSize - 1);
       if (error) throw error;
       return data || [];
     },
