@@ -64,8 +64,6 @@ docker build -t sinelog:latest .
 
 # Tag a versioned copy (used later for version update demo)
 docker tag sinelog:latest sinelog:v1.0.0
-
-# Confirm the images exist
 docker images | findstr sinelog
 ```
 

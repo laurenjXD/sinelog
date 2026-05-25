@@ -20,14 +20,14 @@ spec:
       labels:
         app: sinelog
     spec:
-      # ── Security ───────────────────────────────────────────────
+      #  Security
       securityContext:
         runAsNonRoot: true
         runAsUser: 1001
         runAsGroup: 1001
         fsGroup: 1001
 
-      # ── Graceful shutdown ──────────────────────────────────────
+      #  Graceful shutdown
       terminationGracePeriodSeconds: 30
 
       containers:
@@ -40,19 +40,19 @@ spec:
               containerPort: 8080
               protocol: TCP
 
-          # ── Secret env vars (TMDB_KEY, SUPABASE_URL, SUPABASE_ANON) ──
+          # Secret env vars (TMDB_KEY, SUPABASE_URL, SUPABASE_ANON)
           envFrom:
             - secretRef:
                 name: sinelog-secrets
 
-          # ── Nginx config from ConfigMap ────────────────────────
+          #  Nginx config from ConfigMap
           volumeMounts:
             - name: nginx-config
               mountPath: /etc/nginx/conf.d/default.conf
               subPath: default.conf
               readOnly: true
 
-          # ── Resource limits ────────────────────────────────────
+          #  Resource limits
           resources:
             requests:
               cpu: "50m"
@@ -61,7 +61,7 @@ spec:
               cpu: "200m"
               memory: "128Mi"
 
-          # ── Health probes ──────────────────────────────────────
+          # ── Health probes
           readinessProbe:
             httpGet:
               path: /healthz
@@ -78,7 +78,7 @@ spec:
             periodSeconds: 20
             failureThreshold: 3
 
-          # ── Security context ───────────────────────────────────
+          #  Security context
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: false # nginx needs to write tmp files

@@ -119,6 +119,34 @@ erDiagram
 
 ## 5. Detailed System Flow
 
+### Core Data Flow (Input / Output)
+The system data moves bidirectionally between the user interface and the underlying database architecture, managed by the browser executing the SPA logic.
+
+**1. Input Flow (User → Application → Database):**
+When a user generates data (e.g., logging a film, liking a review, or signing up):
+* **User** interacts with the UI (fills out the review form, clicks "Log Film").
+* **Application** (Vanilla JS SPA) captures the input, runs local validation, and formats the request via the `SL.Store` module.
+* **Database** (Supabase PostgreSQL) receives the formatted request, checks Row Level Security (RLS), and executes the `INSERT` or `UPSERT` operation, storing the data.
+
+**2. Output Flow (Database → Application → User):**
+When a user requests data (e.g., loading the activity feed, viewing a profile):
+* **Database** (Supabase PostgreSQL) is queried for specific records (usually pre-joined views like `activity_feed`).
+* **Application** (Vanilla JS SPA) receives the JSON payload, processes the data, and dynamically creates HTML DOM elements.
+* **User** sees the rendered information (like movie cards and reviews) displayed on their screen.
+
+```mermaid
+flowchart LR
+    subgraph Input Flow
+        U1([User]) -->|Interacts/Types| A1[Application UI]
+        A1 -->|Validates & Sends Data| D1[(Database)]
+    end
+    
+    subgraph Output Flow
+        D2[(Database)] -->|Returns JSON Data| A2[Application UI]
+        A2 -->|Renders to Screen| U2([User])
+    end
+```
+
 ### Overall System Architecture Flow
 ```mermaid
 graph TD
